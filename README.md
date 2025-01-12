@@ -1,69 +1,107 @@
-# Welcome to your Lovable project
+# Roanoke Ambassadors Platform 🌟
 
-## Project info
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+![TypeScript](https://img.shields.io/badge/TypeScript-4.9.5-blue)
+![React](https://img.shields.io/badge/React-18.2.0-blue)
+![Firebase](https://img.shields.io/badge/Firebase-9.x-orange)
 
-**URL**: https://lovable.dev/projects/ad1d3808-43c1-4b0e-a99c-25c21dfcfd31
+A modern, collaborative platform built for the Roanoke Ambassador program to streamline event management, volunteer coordination, and community engagement.
 
-## How can I edit this code?
+## 🚀 Features
 
-There are several ways of editing your application.
+- **Event Management**
+  - Create and manage community events
+  - Real-time collaborative event planning
+  - Task assignment and tracking
+  - Budget management
+  - File sharing and documentation
 
-**Use Lovable**
+- **Volunteer Coordination**
+  - Role-based access control
+  - Volunteer role assignments
+  - Feedback collection
+  - Performance tracking
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/ad1d3808-43c1-4b0e-a99c-25c21dfcfd31) and start prompting.
+- **Interactive Tools**
+  - Real-time collaborative whiteboard
+  - Shared task management
+  - Event reporting and analytics
+  - Resource allocation
 
-Changes made via Lovable will be committed automatically to this repo.
+## 🛠️ Tech Stack
 
-**Use your preferred IDE**
+- **Frontend**: React, TypeScript, Material-UI
+- **Backend**: Firebase (Authentication, Firestore, Storage)
+- **State Management**: React Context
+- **Real-time Features**: Firebase Realtime Database
+- **Deployment**: Firebase Hosting
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## 🏗️ Project Structure
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```
+src/
+├── components/      # Reusable UI components
+├── contexts/        # React context providers
+├── hooks/          # Custom React hooks
+├── lib/            # Firebase and utility functions
+├── pages/          # Application routes and pages
+└── utils/          # Helper functions and utilities
 ```
 
-**Edit a file directly in GitHub**
+## 🚀 Getting Started
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/zenifold/roanoke-ambassadors.git
+   cd roanoke-ambassadors
+   ```
 
-**Use GitHub Codespaces**
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+3. **Set up environment variables**
+   ```bash
+   cp .env.example .env
+   # Add your Firebase configuration
+   ```
 
-## What technologies are used for this project?
+4. **Start the development server**
+   ```bash
+   npm run dev
+   ```
 
-This project is built with .
+## 🔒 Environment Variables
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+Create a `.env` file in the root directory with the following variables:
+```
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_STORAGE_BUCKET=
+VITE_FIREBASE_MESSAGING_SENDER_ID=
+VITE_FIREBASE_APP_ID=
+```
 
-## How can I deploy this project?
+## 📝 License
 
-Simply open [Lovable](https://lovable.dev/projects/ad1d3808-43c1-4b0e-a99c-25c21dfcfd31) and click on Share -> Publish.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## I want to use a custom domain - is that possible?
+## 🤝 Contributing
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📧 Contact
+
+For questions or support, please contact the development team or create an issue in the repository.
+
+---
+
+Built with ❤️ for the Roanoke community
