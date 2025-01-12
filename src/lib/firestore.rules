@@ -1,0 +1,113 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isUserProfile(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function isProgramManager() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'program_manager';
+    }
+
+    function isEventCollaborator(eventId) {
+      return request.auth.uid in get(/databases/$(database)/documents/events/$(eventId)).data.collaborators;
+    }
+
+    function isEventCreator(eventId) {
+      return request.auth.uid == get(/databases/$(database)/documents/events/$(eventId)).data.createdBy;
+    }
+
+    function isTaskAssignee(taskId) {
+      return request.auth.uid in get(/databases/$(database)/documents/tasks/$(taskId)).data.assignedTo;
+    }
+
+    function isTaskCreator(taskId) {
+      return request.auth.uid == get(/databases/$(database)/documents/tasks/$(taskId)).data.createdBy;
+    }
+
+    // User profiles
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isUserProfile(userId);
+      allow delete: if false;
+    }
+
+    // Events
+    match /events/{eventId} {
+      allow read: if isAuthenticated() && (
+        isEventCollaborator(eventId) || 
+        isProgramManager()
+      );
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (
+        isEventCreator(eventId) || 
+        isProgramManager()
+      );
+      allow delete: if isAuthenticated() && isProgramManager();
+    }
+
+    // Tasks
+    match /tasks/{taskId} {
+      allow read: if isAuthenticated() && (
+        isTaskAssignee(taskId) || 
+        isTaskCreator(taskId) || 
+        isProgramManager()
+      );
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (
+        isTaskAssignee(taskId) || 
+        isTaskCreator(taskId) || 
+        isProgramManager()
+      );
+      allow delete: if isAuthenticated() && (
+        isTaskCreator(taskId) || 
+        isProgramManager()
+      );
+    }
+
+    // Budget Items
+    match /budget_items/{itemId} {
+      allow read: if isAuthenticated() && (
+        isEventCollaborator(resource.data.eventId) ||
+        isProgramManager()
+      );
+      allow create: if isAuthenticated() && (
+        isEventCollaborator(request.resource.data.eventId) ||
+        isProgramManager()
+      );
+      allow update: if isAuthenticated() && (
+        isEventCreator(resource.data.eventId) ||
+        isProgramManager()
+      );
+      allow delete: if isAuthenticated() && (
+        isEventCreator(resource.data.eventId) ||
+        isProgramManager()
+      );
+    }
+
+    // Funding Sources
+    match /funding_sources/{sourceId} {
+      allow read: if isAuthenticated() && (
+        isEventCollaborator(resource.data.eventId) ||
+        isProgramManager()
+      );
+      allow create: if isAuthenticated() && (
+        isEventCollaborator(request.resource.data.eventId) ||
+        isProgramManager()
+      );
+      allow update: if isAuthenticated() && (
+        isEventCreator(resource.data.eventId) ||
+        isProgramManager()
+      );
+      allow delete: if isAuthenticated() && (
+        isEventCreator(resource.data.eventId) ||
+        isProgramManager()
+      );
+    }
+  }
+} 

@@ -1,0 +1,89 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Development mode - allow all access
+    match /{document=**} {
+      allow read, write: if true;
+    }
+
+    // Production rules (commented out for now)
+    /*
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isUserProfile(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    function isProgramManager() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'program_manager';
+    }
+    
+    function isGroupMember(groupId) {
+      return request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.members;
+    }
+    
+    function isGroupLeader(groupId) {
+      return request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.leaders;
+    }
+
+    function isValidNewGroup() {
+      let group = request.resource.data;
+      return group.keys().hasAll(['name', 'description', 'category', 'members', 'leaders', 'createdBy']) &&
+             group.createdBy == request.auth.uid &&
+             group.members is list &&
+             group.leaders is list &&
+             group.members.hasAll([request.auth.uid]) &&
+             group.leaders.hasAll([request.auth.uid]);
+    }
+
+    // User profiles
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isUserProfile(userId);
+      allow update: if isAuthenticated() && (isUserProfile(userId) || isProgramManager());
+      allow delete: if false;
+    }
+
+    // Groups
+    match /groups/{groupId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidNewGroup();
+      allow update: if isAuthenticated() && (isGroupLeader(groupId) || isProgramManager());
+      allow delete: if isAuthenticated() && isProgramManager();
+    }
+
+    // Events
+    match /events/{eventId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isGroupMember(resource.data.groupId);
+      allow update: if isAuthenticated() && (
+        isGroupLeader(resource.data.groupId) || 
+        isProgramManager() ||
+        (isGroupMember(resource.data.groupId) && resource.data.status == 'draft')
+      );
+      allow delete: if isAuthenticated() && (isGroupLeader(resource.data.groupId) || isProgramManager());
+    }
+
+    // Tasks
+    match /tasks/{taskId} {
+      function isValidTask() {
+        return request.resource.data.keys().hasAll(['title', 'description', 'status', 'priority', 'dueDate', 'assignedTo', 'groupId', 'createdBy']) &&
+               request.resource.data.groupId != null &&
+               isGroupMember(request.resource.data.groupId);
+      }
+
+      allow read: if isAuthenticated() && isGroupMember(resource.data.groupId);
+      allow create: if isAuthenticated() && isValidTask();
+      allow update: if isAuthenticated() && (
+        isGroupMember(resource.data.groupId) && 
+        (request.auth.uid in resource.data.assignedTo || isGroupLeader(resource.data.groupId))
+      );
+      allow delete: if isAuthenticated() && isGroupLeader(resource.data.groupId);
+    }
+    */
+  }
+}
