@@ -33,20 +33,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Check if user profile exists, if not create it
         const profile = await getUserProfile(user.uid);
         if (!profile) {
-          // Create user profile with Google data if available
+          // For Google sign-in users, we can get their name
           const firstName = user.displayName?.split(' ')[0] || '';
           const lastName = user.displayName?.split(' ').slice(1).join(' ') || '';
-          await createUserProfile(user.uid, user.email!, 'ambassador', firstName, lastName);
-          if (user.photoURL) {
-            await updateUserProfile(user.uid, {
-              avatarUrl: user.photoURL,
-            });
-          }
-        } else if (user.photoURL && user.photoURL !== profile.avatarUrl) {
-          // Update avatar URL if it changed
-          await updateUserProfile(user.uid, {
-            avatarUrl: user.photoURL,
-          });
+          await createUserProfile(user.uid, user.email || '', 'ambassador', firstName, lastName);
         }
       }
       setLoading(false);
@@ -55,22 +45,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return unsubscribe;
   }, []);
 
+  const signUp = async (email: string, password: string) => {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    // Create user profile immediately after signup
+    await createUserProfile(userCredential.user.uid, email, 'ambassador');
+  };
+
   const signIn = async (email: string, password: string) => {
     await signInWithEmailAndPassword(auth, email, password);
   };
 
-  const signUp = async (email: string, password: string) => {
-    await createUserWithEmailAndPassword(auth, email, password);
-  };
-
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
+    const userCredential = await signInWithPopup(auth, provider);
+    const user = userCredential.user;
+    
+    // Check if profile exists
+    const profile = await getUserProfile(user.uid);
+    if (!profile) {
+      // Create profile with Google user's name
+      const firstName = user.displayName?.split(' ')[0] || '';
+      const lastName = user.displayName?.split(' ').slice(1).join(' ') || '';
+      await createUserProfile(user.uid, user.email || '', 'ambassador', firstName, lastName);
+    }
   };
 
-  const logOut = async () => {
-    await firebaseSignOut(auth);
-  };
+  const logOut = () => firebaseSignOut(auth);
 
   const value = {
     user,
@@ -83,7 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <AuthContext.Provider value={value}>
-      {children}
+      {!loading && children}
     </AuthContext.Provider>
   );
 }
