@@ -41,27 +41,31 @@ export default function EventsList() {
           setUserRole(profile.role);
         }
 
-        // For admins and program managers, get all events
-        // For ambassadors, get published events
-        const shouldIncludeUnpublished = profile?.role === 'admin' || profile?.role === 'program_manager';
-        console.log('Should include unpublished:', shouldIncludeUnpublished);
-        
-        const events = await getAllEvents(shouldIncludeUnpublished);
+        // Get all events
+        const events = await getAllEvents(true);  // Always get all events
         console.log('Fetched events:', events);
         setEvents(events);
         
         // Fetch creator profiles for all events
-        const creatorIds = [...new Set(events.map(event => event.createdBy))];
-        console.log('Creator IDs:', creatorIds);
+        const userIds = new Set<string>();
+        events.forEach(event => {
+          userIds.add(event.createdBy);
+          event.collaborators?.forEach(id => userIds.add(id));
+        });
+        
+        console.log('Fetching profiles for users:', Array.from(userIds));
         const profiles = await Promise.all(
-          creatorIds.map(async (creatorId) => {
-            const profile = await getUserProfile(creatorId);
-            return [creatorId, profile];
+          Array.from(userIds).map(async (userId) => {
+            const profile = await getUserProfile(userId);
+            if (!profile) {
+              console.warn('No profile found for user:', userId);
+            }
+            return [userId, profile];
           })
         );
         
         const profileMap = Object.fromEntries(profiles.filter(([_, profile]) => profile !== null));
-        console.log('User profiles:', profileMap);
+        console.log('User profiles loaded:', profileMap);
         setUserProfiles(profileMap);
         
         const ongoingProgramEvents = events.filter(e => e.eventType === 'ongoing');
@@ -97,23 +101,7 @@ export default function EventsList() {
     if (selectedEventType !== 'all' && event.eventType !== selectedEventType) return false;
     if (selectedProgram !== 'none' && event.linkedProgramId !== selectedProgram) return false;
 
-    // For ambassadors, show:
-    // 1. All published events (which are already filtered at the query level)
-    // 2. Their own events (any status)
-    // 3. Events they're collaborating on (any status)
-    if (userRole === 'ambassador' && event.status !== 'published') {
-      const isCreator = event.createdBy === user?.uid;
-      const isCollaborator = event.collaborators?.includes(user?.uid);
-      console.log('Event filtering:', {
-        eventId: event.id,
-        status: event.status,
-        isCreator,
-        isCollaborator,
-        allowed: isCreator || isCollaborator
-      });
-      return isCreator || isCollaborator;
-    }
-
+    // Show all events to everyone
     return true;
   }));
 
