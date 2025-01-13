@@ -36,17 +36,23 @@ export default function EventsList() {
       try {
         // Get user profile to check role
         const profile = await getUserProfile(user.uid);
+        console.log('User profile:', profile);
         if (profile) {
           setUserRole(profile.role);
         }
 
         // For admins and program managers, get all events
         // For ambassadors, get published events
-        const events = await getAllEvents(profile?.role === 'admin' || profile?.role === 'program_manager');
+        const shouldIncludeUnpublished = profile?.role === 'admin' || profile?.role === 'program_manager';
+        console.log('Should include unpublished:', shouldIncludeUnpublished);
+        
+        const events = await getAllEvents(shouldIncludeUnpublished);
+        console.log('Fetched events:', events);
         setEvents(events);
         
         // Fetch creator profiles for all events
         const creatorIds = [...new Set(events.map(event => event.createdBy))];
+        console.log('Creator IDs:', creatorIds);
         const profiles = await Promise.all(
           creatorIds.map(async (creatorId) => {
             const profile = await getUserProfile(creatorId);
@@ -54,8 +60,13 @@ export default function EventsList() {
           })
         );
         
-        setUserProfiles(Object.fromEntries(profiles.filter(([_, profile]) => profile !== null)));
-        setOngoingPrograms(events.filter(e => e.eventType === 'ongoing'));
+        const profileMap = Object.fromEntries(profiles.filter(([_, profile]) => profile !== null));
+        console.log('User profiles:', profileMap);
+        setUserProfiles(profileMap);
+        
+        const ongoingProgramEvents = events.filter(e => e.eventType === 'ongoing');
+        console.log('Ongoing programs:', ongoingProgramEvents);
+        setOngoingPrograms(ongoingProgramEvents);
       } catch (error) {
         console.error('Error loading events:', error);
         setError('Failed to load events');
@@ -91,7 +102,16 @@ export default function EventsList() {
     // 2. Their own events (any status)
     // 3. Events they're collaborating on (any status)
     if (userRole === 'ambassador' && event.status !== 'published') {
-      return event.createdBy === user?.uid || event.collaborators?.includes(user?.uid);
+      const isCreator = event.createdBy === user?.uid;
+      const isCollaborator = event.collaborators?.includes(user?.uid);
+      console.log('Event filtering:', {
+        eventId: event.id,
+        status: event.status,
+        isCreator,
+        isCollaborator,
+        allowed: isCreator || isCollaborator
+      });
+      return isCreator || isCollaborator;
     }
 
     return true;
