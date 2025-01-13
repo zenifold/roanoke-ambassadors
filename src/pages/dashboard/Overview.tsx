@@ -17,18 +17,35 @@ export default function Overview() {
       if (!user) return;
 
       try {
-        const [userEvents, userTasks, userNotifications] = await Promise.all([
-          getEventsByUser(user.uid),
-          getTasksByUser(user.uid),
-          getNotificationsByUser(user.uid)
-        ]);
+        // Load each data type separately to handle individual failures
+        let userEvents: Event[] = [];
+        let userTasks: Task[] = [];
+        let userNotifications: Notification[] = [];
+
+        try {
+          userEvents = await getEventsByUser(user.uid);
+        } catch (error) {
+          console.error('Error loading events:', error);
+        }
+
+        try {
+          userTasks = await getTasksByUser(user.uid);
+        } catch (error) {
+          console.error('Error loading tasks:', error);
+        }
+
+        try {
+          userNotifications = await getNotificationsByUser(user.uid);
+        } catch (error) {
+          console.error('Error loading notifications:', error);
+        }
 
         setEvents(userEvents);
         setTasks(userTasks);
         setNotifications(userNotifications);
       } catch (error) {
-        console.error('Error loading overview data:', error);
-        setError('Failed to load overview data');
+        console.error('Error in loadData:', error);
+        setError('Some data failed to load. Please refresh to try again.');
       } finally {
         setLoading(false);
       }

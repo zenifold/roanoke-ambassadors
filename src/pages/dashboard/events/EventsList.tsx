@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
-import { getEventsByUser, type Event, updateEvent, deleteEvent, getUserProfile, type UserProfile } from '../../../lib/firestore';
+import { getAllEvents, type Event, updateEvent, deleteEvent, getUserProfile, type UserProfile } from '../../../lib/firestore';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../../../components/ui/select';
 import { toast } from 'sonner';
 import { CalendarDays, MapPin, User, Clock, MoreVertical, Edit, Archive, Trash2, ListFilter, Calendar, CalendarRange, ArrowUpDown, Layers, BookOpen } from 'lucide-react';
@@ -33,7 +33,7 @@ export default function EventsList() {
     const loadEvents = async () => {
       if (!user) return;
       try {
-        const events = await getEventsByUser(user.uid);
+        const events = await getAllEvents();
         setEvents(events);
         
         // Fetch creator profiles for all events

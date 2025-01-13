@@ -280,6 +280,7 @@ export const getEventById = async (eventId: string): Promise<Event | null> => {
 export const getEventsByUser = async (userId: string): Promise<Event[]> => {
   const eventsQuery = query(
     collection(db, 'events'),
+    where('collaborators', 'array-contains', userId),
     orderBy('createdAt', 'desc')
   );
   const querySnapshot = await getDocs(eventsQuery);
@@ -349,26 +350,13 @@ export const updateTask = async (taskId: string, taskData: Partial<Omit<Task, 'i
 };
 
 export const getTasksByUser = async (userId: string): Promise<Task[]> => {
-  // First get all groups the user is a member of
-  const groupsQuery = query(
-    collection(db, 'groups'),
-    where('members', 'array-contains', userId)
-  );
-  const groupsSnapshot = await getDocs(groupsQuery);
-  const groupIds = groupsSnapshot.docs.map(doc => doc.id);
-
-  if (groupIds.length === 0) {
-    return [];
-  }
-
-  // Then get tasks where user is assigned and task belongs to one of their groups
   const tasksQuery = query(
     collection(db, 'tasks'),
     where('assignees', 'array-contains', userId),
-    where('groupId', 'in', groupIds)
+    orderBy('createdAt', 'desc')
   );
-  const tasksSnapshot = await getDocs(tasksQuery);
-  return tasksSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
+  const querySnapshot = await getDocs(tasksQuery);
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
 };
 
 export const getTasksByEvent = async (eventId: string): Promise<Task[]> => {
@@ -1164,13 +1152,8 @@ export async function getNotificationsByUser(userId: string): Promise<Notificati
     orderBy('createdAt', 'desc'),
     limit(50)
   );
-
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data(),
-    createdAt: doc.data().createdAt.toDate()
-  })) as Notification[];
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Notification));
 }
 
 // Mark a notification as read
@@ -1197,3 +1180,12 @@ export async function deleteNotification(notificationId: string): Promise<void> 
   const notificationRef = doc(db, 'notifications', notificationId);
   await deleteDoc(notificationRef);
 }
+
+export const getAllEvents = async (): Promise<Event[]> => {
+  const eventsQuery = query(
+    collection(db, 'events'),
+    orderBy('createdAt', 'desc')
+  );
+  const querySnapshot = await getDocs(eventsQuery);
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event));
+};
