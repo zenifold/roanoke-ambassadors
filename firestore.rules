@@ -19,10 +19,27 @@ service cloud.firestore {
 
     // Events collection
     match /events/{eventId} {
+      // Allow reading all events for authenticated users
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated() && (
-        request.auth.uid in request.resource.data.collaborators ||
-        request.resource.data.createdBy == request.auth.uid
+      
+      // Allow creating new events
+      allow create: if isAuthenticated() && (
+        // Creator must be the current user
+        request.resource.data.createdBy == request.auth.uid &&
+        // Current user must be in collaborators
+        request.auth.uid in request.resource.data.collaborators
+      );
+      
+      // Allow updating existing events
+      allow update: if isAuthenticated() && (
+        // Must be creator or collaborator
+        request.auth.uid == resource.data.createdBy ||
+        request.auth.uid in resource.data.collaborators
+      );
+      
+      // Allow deleting events
+      allow delete: if isAuthenticated() && (
+        request.auth.uid == resource.data.createdBy
       );
     }
 

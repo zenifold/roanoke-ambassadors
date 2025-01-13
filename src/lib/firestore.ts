@@ -1182,16 +1182,21 @@ export async function deleteNotification(notificationId: string): Promise<void> 
 }
 
 export const getAllEvents = async (includeUnpublished: boolean = false): Promise<Event[]> => {
-  const eventsQuery = includeUnpublished 
-    ? query(
-        collection(db, 'events'),
-        orderBy('createdAt', 'desc')
-      )
-    : query(
-        collection(db, 'events'),
-        where('status', '==', 'published'),
-        orderBy('createdAt', 'desc')
-      );
+  // Get all events, ordered by creation date
+  const eventsQuery = query(
+    collection(db, 'events'),
+    orderBy('createdAt', 'desc')
+  );
+
   const querySnapshot = await getDocs(eventsQuery);
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event));
+  const events = querySnapshot.docs.map(doc => {
+    const data = doc.data();
+    // Ensure collaborators is always an array
+    if (!data.collaborators || !Array.isArray(data.collaborators)) {
+      data.collaborators = [];
+    }
+    return { id: doc.id, ...data } as Event;
+  });
+
+  return events;
 };
