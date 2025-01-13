@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
-import { getAllEvents, type Event, updateEvent, deleteEvent, getUserProfile, type UserProfile } from '../../../lib/firestore';
+import { getAllEvents, type Event, updateEvent, deleteEvent, getUserProfile, type UserProfile, type UserRole } from '../../../lib/firestore';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../../../components/ui/select';
 import { toast } from 'sonner';
 import { CalendarDays, MapPin, User, Clock, MoreVertical, Edit, Archive, Trash2, ListFilter, Calendar, CalendarRange, ArrowUpDown, Layers, BookOpen } from 'lucide-react';
@@ -28,12 +28,21 @@ export default function EventsList() {
   const [ongoingPrograms, setOngoingPrograms] = useState<Event[]>([]);
   const [sortBy, setSortBy] = useState<'created' | 'date'>('created');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [userRole, setUserRole] = useState<UserRole>('ambassador');
 
   useEffect(() => {
     const loadEvents = async () => {
       if (!user) return;
       try {
-        const events = await getAllEvents();
+        // Get user profile to check role
+        const profile = await getUserProfile(user.uid);
+        if (profile) {
+          setUserRole(profile.role);
+        }
+
+        // Show all events for admins and program managers
+        const showAllEvents = profile?.role === 'admin' || profile?.role === 'program_manager';
+        const events = await getAllEvents(showAllEvents);
         setEvents(events);
         
         // Fetch creator profiles for all events
@@ -72,9 +81,23 @@ export default function EventsList() {
   };
 
   const filteredEvents = sortEvents(events.filter(event => {
+    // Basic filters
     if (selectedStatus !== 'all' && event.status !== selectedStatus) return false;
     if (selectedEventType !== 'all' && event.eventType !== selectedEventType) return false;
     if (selectedProgram !== 'none' && event.linkedProgramId !== selectedProgram) return false;
+
+    // Visibility rules
+    if (userRole === 'ambassador') {
+      // Regular ambassadors can see:
+      // 1. Published events
+      // 2. Their own events
+      // 3. Events they're collaborating on
+      return event.status === 'published' || 
+             event.createdBy === user?.uid || 
+             event.collaborators.includes(user?.uid);
+    }
+
+    // Admins and program managers can see all events
     return true;
   }));
 

@@ -1181,11 +1181,17 @@ export async function deleteNotification(notificationId: string): Promise<void> 
   await deleteDoc(notificationRef);
 }
 
-export const getAllEvents = async (): Promise<Event[]> => {
-  const eventsQuery = query(
-    collection(db, 'events'),
-    orderBy('createdAt', 'desc')
-  );
+export const getAllEvents = async (includeUnpublished: boolean = false): Promise<Event[]> => {
+  const eventsQuery = includeUnpublished 
+    ? query(
+        collection(db, 'events'),
+        orderBy('createdAt', 'desc')
+      )
+    : query(
+        collection(db, 'events'),
+        where('status', '==', 'published'),
+        orderBy('createdAt', 'desc')
+      );
   const querySnapshot = await getDocs(eventsQuery);
   return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event));
 };
