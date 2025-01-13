@@ -51,7 +51,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-[#1a472a]/5 to-[#1a472a]/10">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#f8f2f0]">
       <div className="w-full max-w-md space-y-8 px-4">
         <div className="flex flex-col items-center space-y-2 text-center">
           <img 

@@ -467,17 +467,17 @@ export function EventDetails({ event, onEventUpdated }: EventDetailsProps) {
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="flex flex-wrap gap-1 h-auto justify-start">
-          <div className="flex flex-wrap gap-1">
-            <TabsTrigger value="overview" className="text-sm">Overview</TabsTrigger>
-            <TabsTrigger value="tasks" className="text-sm">Tasks</TabsTrigger>
-            <TabsTrigger value="coordination" className="text-sm">Event Day</TabsTrigger>
+        <div className="overflow-auto">
+          <div className="inline-flex h-10 items-center justify-start rounded-md bg-muted p-1 text-muted-foreground min-w-fit">
+            <TabsList className="bg-transparent flex gap-1">
+              <TabsTrigger value="overview" className="text-sm">Overview</TabsTrigger>
+              <TabsTrigger value="tasks" className="text-sm">Tasks</TabsTrigger>
+              <TabsTrigger value="coordination" className="text-sm">Event Day</TabsTrigger>
+              <TabsTrigger value="budget" className="text-sm">Budget</TabsTrigger>
+              <TabsTrigger value="reports" className="text-sm">Reports</TabsTrigger>
+            </TabsList>
           </div>
-          <div className="flex flex-wrap gap-1">
-            <TabsTrigger value="budget" className="text-sm">Budget</TabsTrigger>
-            <TabsTrigger value="reports" className="text-sm">Reports</TabsTrigger>
-          </div>
-        </TabsList>
+        </div>
 
         <TabsContent value="overview" className="space-y-4">
           <Card>
@@ -624,24 +624,26 @@ export function EventDetails({ event, onEventUpdated }: EventDetailsProps) {
               <div className="space-y-2">
                 {event.checklist?.map((item) => (
                   <Card key={item.id} className="p-3">
-                    <div className="flex items-center space-x-3">
-                      <Checkbox
-                        checked={item.completed}
-                        onCheckedChange={(checked) => {
-                          const updatedChecklist = event.checklist?.map(i =>
-                            i.id === item.id ? { ...i, completed: checked === true } : i
-                          );
-                          updateEvent(event.id, { checklist: updatedChecklist });
-                        }}
-                      />
-                      <span className={`flex-1 ${item.completed ? 'line-through text-gray-500' : ''}`}>
-                        {item.text}
-                      </span>
+                    <div className="flex flex-col space-y-3 sm:flex-row sm:space-y-0 sm:items-center sm:space-x-3">
+                      <div className="flex items-center flex-1 space-x-3">
+                        <Checkbox
+                          checked={item.completed}
+                          onCheckedChange={(checked) => {
+                            const updatedChecklist = event.checklist?.map(i =>
+                              i.id === item.id ? { ...i, completed: checked === true } : i
+                            );
+                            updateEvent(event.id, { checklist: updatedChecklist });
+                          }}
+                        />
+                        <span className={`flex-1 ${item.completed ? 'line-through text-gray-500' : ''}`}>
+                          {item.text}
+                        </span>
+                      </div>
                       <Select
                         value={item.assignedTo || ""}
                         onValueChange={(value) => handleAssignChecklistItem(item.id, value)}
                       >
-                        <SelectTrigger className="w-[200px]">
+                        <SelectTrigger className="w-full sm:w-[200px]">
                           <SelectValue placeholder="Assign to..." />
                         </SelectTrigger>
                         <SelectContent>

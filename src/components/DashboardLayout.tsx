@@ -91,18 +91,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
           </div>
 
-          {/* Toggle Button */}
-          <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="absolute -right-3 top-24 bg-white rounded-full p-1 shadow-md hover:bg-gray-50"
-          >
-            {isExpanded ? (
-              <ChevronLeft className="h-4 w-4" />
-            ) : (
-              <ChevronRight className="h-4 w-4" />
-            )}
-          </button>
-
           {/* Navigation Items */}
           <div className="flex-1 py-8 px-3">
             <div className="space-y-2">
@@ -135,6 +123,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {/* Profile Section */}
           {profile && (
             <div className="p-3 border-t">
+              {/* Toggle Button */}
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="mb-3 w-full flex items-center justify-center p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+              >
+                {isExpanded ? (
+                  <ChevronLeft className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )}
+                {isExpanded && <span className="ml-2 text-sm">Collapse menu</span>}
+              </button>
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button 
@@ -262,7 +263,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#f8f2f0]">
       <DesktopNav />
       <MobileHeader />
       

@@ -70,7 +70,7 @@ export default function Landing() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-grow pt-16">
+      <main className="flex-grow pt-16 bg-[#f8f2f0]">
         {/* Hero Section */}
         <div className="relative h-[700px]">
           <div className="absolute inset-0">
@@ -118,7 +118,7 @@ export default function Landing() {
         </div>
 
         {/* Features Section */}
-        <section className="py-20 bg-gradient-to-b from-[#1a472a]/10 to-white">
+        <section className="py-20 bg-[#f8f2f0]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
               <motion.h3 
