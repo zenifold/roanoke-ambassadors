@@ -31,11 +31,19 @@ export default function CreateEvent() {
       // Only create a date object for one-time events
       let eventDate = null;
       if (eventType === 'one_time' && date) {
+        // Create date in local timezone
         eventDate = new Date(date);
         if (time) {
           const [hours, minutes] = time.split(':');
           eventDate.setHours(parseInt(hours, 10), parseInt(minutes, 10));
+        } else {
+          // If no time set, default to midnight
+          eventDate.setHours(0, 0, 0, 0);
         }
+        
+        // Adjust for timezone offset to store in UTC
+        const tzOffset = eventDate.getTimezoneOffset() * 60000;
+        eventDate = new Date(eventDate.getTime() - tzOffset);
       }
 
       const eventId = await createEvent({

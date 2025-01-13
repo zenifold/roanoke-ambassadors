@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 
 export default function Login() {
   const navigate = useNavigate();
-  const { signIn } = useAuth();
+  const { signIn, signInWithGoogle } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [formData, setFormData] = useState({
@@ -28,22 +30,62 @@ export default function Login() {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
+    setError('');
+
+    try {
+      await signInWithGoogle();
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Error signing in with Google:', error);
+      setError('Failed to sign in with Google');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50/50">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-[#1a472a]/5 to-[#1a472a]/10">
       <div className="w-full max-w-md space-y-8 px-4">
-        <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-bold tracking-tighter">Welcome back</h1>
-          <p className="text-gray-500 dark:text-gray-400">
+        <div className="flex flex-col items-center space-y-2 text-center">
+          <img 
+            src="/G2KN Logo Cutout.webp" 
+            alt="G2KN" 
+            className="h-16 w-auto mb-2"
+          />
+          <h1 className="text-3xl font-bold tracking-tighter text-[#1a472a]">Welcome back</h1>
+          <p className="text-gray-500">
             Enter your credentials to access your account
           </p>
         </div>
 
         <div className="space-y-6 bg-white p-6 rounded-lg border shadow-sm">
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full flex items-center justify-center space-x-2 hover:bg-gray-50"
+            onClick={handleGoogleSignIn}
+            disabled={loading}
+          >
+            <img src="https://www.google.com/favicon.ico" alt="Google" className="w-4 h-4" />
+            <span>Continue with Google</span>
+          </Button>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <Separator />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white px-2 text-gray-500">Or continue with</span>
+            </div>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
               <div className="p-3 text-sm text-red-500 bg-red-50 rounded-md">
@@ -62,7 +104,7 @@ export default function Login() {
                 value={formData.email}
                 onChange={handleChange}
                 required
-                className="flex h-10 w-full rounded-md border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2"
+                className="flex h-10 w-full rounded-md border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a472a] focus-visible:ring-offset-2"
               />
             </div>
 
@@ -77,14 +119,14 @@ export default function Login() {
                 value={formData.password}
                 onChange={handleChange}
                 required
-                className="flex h-10 w-full rounded-md border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2"
+                className="flex h-10 w-full rounded-md border border-gray-200 bg-gray-50/50 px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a472a] focus-visible:ring-offset-2"
               />
             </div>
 
-            <button
+            <Button
               type="submit"
               disabled={loading}
-              className="inline-flex w-full items-center justify-center rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-gray-50 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-gray-950 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+              className="w-full bg-[#1a472a] hover:bg-[#0d2415] text-white"
             >
               {loading ? (
                 <>
@@ -97,12 +139,12 @@ export default function Login() {
               ) : (
                 'Sign in'
               )}
-            </button>
+            </Button>
           </form>
 
           <div className="text-center text-sm">
             <span className="text-gray-500">Don't have an account? </span>
-            <Link to="/signup" className="font-medium text-gray-900 hover:text-gray-800 underline-offset-4 hover:underline">
+            <Link to="/signup" className="font-medium text-[#1a472a] hover:text-[#0d2415] underline-offset-4 hover:underline">
               Sign up
             </Link>
           </div>

@@ -1,28 +1,33 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../contexts/AuthContext';
-import { getEventsByUser, type Event, updateEvent, deleteEvent } from '../../../lib/firestore';
+import { getEventsByUser, type Event, updateEvent, deleteEvent, getUserProfile, type UserProfile } from '../../../lib/firestore';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../../../components/ui/select';
 import { toast } from 'sonner';
-import { CalendarDays, MapPin, User, Clock, MoreVertical, Edit, Archive, Trash2 } from 'lucide-react';
+import { CalendarDays, MapPin, User, Clock, MoreVertical, Edit, Archive, Trash2, ListFilter, Calendar, CalendarRange, ArrowUpDown, Layers, BookOpen } from 'lucide-react';
 import { formatDate } from '../../../utils/formatDate';
 import { Badge } from '../../../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../components/ui/tabs';
 import { Button } from '../../../components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '../../../components/ui/dropdown-menu';
 import { Label } from '@/components/ui/label';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Card } from '@/components/ui/card';
 
 export default function EventsList() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [events, setEvents] = useState<Event[]>([]);
+  const [userProfiles, setUserProfiles] = useState<Record<string, UserProfile>>({});
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [viewMode, setViewMode] = useState<'all' | 'grouped'>('all');
   const [selectedEventType, setSelectedEventType] = useState<'all' | 'one_time' | 'ongoing'>('all');
   const [selectedProgram, setSelectedProgram] = useState<string>('none');
   const [ongoingPrograms, setOngoingPrograms] = useState<Event[]>([]);
+  const [sortBy, setSortBy] = useState<'created' | 'date'>('created');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   useEffect(() => {
     const loadEvents = async () => {
@@ -30,7 +35,17 @@ export default function EventsList() {
       try {
         const events = await getEventsByUser(user.uid);
         setEvents(events);
-        // Filter out ongoing programs for the program selector
+        
+        // Fetch creator profiles for all events
+        const creatorIds = [...new Set(events.map(event => event.createdBy))];
+        const profiles = await Promise.all(
+          creatorIds.map(async (creatorId) => {
+            const profile = await getUserProfile(creatorId);
+            return [creatorId, profile];
+          })
+        );
+        
+        setUserProfiles(Object.fromEntries(profiles.filter(([_, profile]) => profile !== null)));
         setOngoingPrograms(events.filter(e => e.eventType === 'ongoing'));
       } catch (error) {
         console.error('Error loading events:', error);
@@ -42,12 +57,26 @@ export default function EventsList() {
     loadEvents();
   }, [user]);
 
-  const filteredEvents = events.filter(event => {
+  const sortEvents = (events: Event[]) => {
+    return [...events].sort((a, b) => {
+      if (sortBy === 'created') {
+        const aDate = a.createdAt instanceof Date ? a.createdAt : (a.createdAt as any).toDate();
+        const bDate = b.createdAt instanceof Date ? b.createdAt : (b.createdAt as any).toDate();
+        return sortOrder === 'desc' ? bDate.getTime() - aDate.getTime() : aDate.getTime() - bDate.getTime();
+      } else {
+        const aDate = a.date ? (a.date instanceof Date ? a.date : (a.date as any).toDate()) : new Date(0);
+        const bDate = b.date ? (b.date instanceof Date ? b.date : (b.date as any).toDate()) : new Date(0);
+        return sortOrder === 'desc' ? bDate.getTime() - aDate.getTime() : aDate.getTime() - bDate.getTime();
+      }
+    });
+  };
+
+  const filteredEvents = sortEvents(events.filter(event => {
     if (selectedStatus !== 'all' && event.status !== selectedStatus) return false;
     if (selectedEventType !== 'all' && event.eventType !== selectedEventType) return false;
     if (selectedProgram !== 'none' && event.linkedProgramId !== selectedProgram) return false;
     return true;
-  });
+  }));
 
   const groupedEvents = {
     idea: filteredEvents.filter(event => event.status === 'idea'),
@@ -111,88 +140,98 @@ export default function EventsList() {
     }
   };
 
-  const renderEventCard = (event: Event) => (
-    <div className="block bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
-      <div className="p-6">
-        <div className="flex justify-between items-start mb-4">
-          <Link to={`/dashboard/events/${event.id}`} className="flex-1">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">{event.title}</h3>
-              <p className="text-sm text-gray-500 line-clamp-2 mb-3">{event.description}</p>
-            </div>
-          </Link>
-          <div className="flex items-center gap-2">
-            {renderEventStatus(event.status)}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem asChild>
-                  <Link to={`/dashboard/events/${event.id}`}>
-                    <Edit className="mr-2 h-4 w-4" />
-                    View Details
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={() => handleUpdateEventStatus(event.id, 'idea')}>
-                  Set as Idea
-                </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => handleUpdateEventStatus(event.id, 'planning')}>
-                  Set as Planning
-                </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => handleUpdateEventStatus(event.id, 'published')}>
-                  Set as Published
-                </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => handleUpdateEventStatus(event.id, 'complete')}>
-                  Set as Complete
-                </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => handleUpdateEventStatus(event.id, 'archived')}>
-                  <Archive className="mr-2 h-4 w-4" />
-                  Archive Event
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem 
-                  onSelect={() => handleDeleteEvent(event.id)}
-                  className="text-red-600"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Delete Event
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-        
-        <div className="flex flex-wrap gap-2 mb-4">
-          {event.tags.map((tag) => (
-            <Badge key={tag} variant="outline" className="text-xs">
-              {tag}
-            </Badge>
-          ))}
-        </div>
+  const renderEventCard = (event: Event) => {
+    const creator = userProfiles[event.createdBy];
+    const isCurrentUser = event.createdBy === user?.uid;
+    const creatorName = isCurrentUser 
+      ? 'you'
+      : creator 
+        ? `${creator.firstName} ${creator.lastName}` 
+        : 'Unknown User';
 
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-500">
-          <div className="flex items-center">
-            <CalendarDays className="w-4 h-4 mr-1.5 flex-shrink-0" />
-            <span>{formatDate(event.date)}</span>
-          </div>
-          {event.location && (
-            <div className="flex items-center">
-              <MapPin className="w-4 h-4 mr-1.5 flex-shrink-0" />
-              <span className="truncate">{event.location}</span>
+    return (
+      <div className="block bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
+        <div className="p-6">
+          <div className="flex justify-between items-start mb-4">
+            <Link to={`/dashboard/events/${event.id}`} className="flex-1">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">{event.title}</h3>
+                <p className="text-sm text-gray-500 line-clamp-2 mb-3">{event.description}</p>
+              </div>
+            </Link>
+            <div className="flex items-center gap-2">
+              {renderEventStatus(event.status)}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem asChild>
+                    <Link to={`/dashboard/events/${event.id}`}>
+                      <Edit className="mr-2 h-4 w-4" />
+                      View Details
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={() => handleUpdateEventStatus(event.id, 'idea')}>
+                    Set as Idea
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => handleUpdateEventStatus(event.id, 'planning')}>
+                    Set as Planning
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => handleUpdateEventStatus(event.id, 'published')}>
+                    Set as Published
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => handleUpdateEventStatus(event.id, 'complete')}>
+                    Set as Complete
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => handleUpdateEventStatus(event.id, 'archived')}>
+                    <Archive className="mr-2 h-4 w-4" />
+                    Archive Event
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    onSelect={() => handleDeleteEvent(event.id)}
+                    className="text-red-600"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete Event
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
-          )}
-          <div className="flex items-center">
-            <User className="w-4 h-4 mr-1.5 flex-shrink-0" />
-            <span>Created by you</span>
+          </div>
+          
+          <div className="flex flex-wrap gap-2 mb-4">
+            {event.tags.map((tag) => (
+              <Badge key={tag} variant="outline" className="text-xs">
+                {tag}
+              </Badge>
+            ))}
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-500">
+            <div className="flex items-center">
+              <CalendarDays className="w-4 h-4 mr-1.5 flex-shrink-0" />
+              <span>{formatDate(event.date)}</span>
+            </div>
+            {event.location && (
+              <div className="flex items-center">
+                <MapPin className="w-4 h-4 mr-1.5 flex-shrink-0" />
+                <span className="truncate">{event.location}</span>
+              </div>
+            )}
+            <div className="flex items-center">
+              <User className="w-4 h-4 mr-1.5 flex-shrink-0" />
+              <span>Created by {creatorName}</span>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   if (loading) {
     return (
@@ -222,11 +261,14 @@ export default function EventsList() {
       </div>
 
       <div className="mt-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="space-y-2">
-            <Label>Status</Label>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-6">
+          <Card className="p-4 space-y-2">
+            <Label className="flex items-center gap-2">
+              <ListFilter className="w-4 h-4" />
+              Status
+            </Label>
             <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
               <SelectContent>
@@ -238,15 +280,18 @@ export default function EventsList() {
                 <SelectItem value="archived">Archived</SelectItem>
               </SelectContent>
             </Select>
-          </div>
+          </Card>
 
-          <div className="space-y-2">
-            <Label>Event Type</Label>
+          <Card className="p-4 space-y-2">
+            <Label className="flex items-center gap-2">
+              <Layers className="w-4 h-4" />
+              Event Type
+            </Label>
             <Select 
               value={selectedEventType} 
               onValueChange={(value) => setSelectedEventType(value as 'all' | 'one_time' | 'ongoing')}
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Filter by type" />
               </SelectTrigger>
               <SelectContent>
@@ -255,12 +300,15 @@ export default function EventsList() {
                 <SelectItem value="ongoing">Ongoing Programs</SelectItem>
               </SelectContent>
             </Select>
-          </div>
+          </Card>
 
-          <div className="space-y-2">
-            <Label>Linked Program</Label>
+          <Card className="p-4 space-y-2">
+            <Label className="flex items-center gap-2">
+              <BookOpen className="w-4 h-4" />
+              Linked Program
+            </Label>
             <Select value={selectedProgram} onValueChange={setSelectedProgram}>
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Filter by program" />
               </SelectTrigger>
               <SelectContent>
@@ -272,23 +320,45 @@ export default function EventsList() {
                 ))}
               </SelectContent>
             </Select>
-          </div>
+          </Card>
 
-          <div className="space-y-2">
-            <Label>View Mode</Label>
+          <Card className="p-4 space-y-2">
+            <Label className="flex items-center gap-2">
+              <Calendar className="w-4 h-4" />
+              Sort By
+            </Label>
             <Select 
-              value={viewMode} 
-              onValueChange={(value) => setViewMode(value as 'all' | 'grouped')}
+              value={sortBy} 
+              onValueChange={(value) => setSortBy(value as 'created' | 'date')}
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Select view mode" />
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Sort by" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Events</SelectItem>
-                <SelectItem value="grouped">Grouped by Status</SelectItem>
+                <SelectItem value="created">Creation Date</SelectItem>
+                <SelectItem value="date">Event Date</SelectItem>
               </SelectContent>
             </Select>
-          </div>
+          </Card>
+
+          <Card className="p-4 space-y-2">
+            <Label className="flex items-center gap-2">
+              <ArrowUpDown className="w-4 h-4" />
+              Sort Order
+            </Label>
+            <Select 
+              value={sortOrder} 
+              onValueChange={(value) => setSortOrder(value as 'asc' | 'desc')}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Sort order" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="desc">Newest First</SelectItem>
+                <SelectItem value="asc">Oldest First</SelectItem>
+              </SelectContent>
+            </Select>
+          </Card>
         </div>
 
         {filteredEvents.length === 0 ? (

@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { CalendarDays, Users, BarChart3, MapPin, Mountain, Compass } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const features = [
   {
@@ -44,17 +45,23 @@ export default function Landing() {
               alt="G2KN" 
               className="h-8 w-auto"
             />
-            <span className="text-lg font-medium text-gray-900">
+            <span className="text-lg font-medium text-[#1a472a]">
               Ambassador Program
             </span>
           </div>
           <div className="flex items-center space-x-4">
             {user ? (
-              <Button onClick={() => navigate('/dashboard')}>
+              <Button 
+                onClick={() => navigate('/dashboard')}
+                className="bg-[#1a472a] hover:bg-[#0d2415] text-white"
+              >
                 Go to Dashboard
               </Button>
             ) : (
-              <Button onClick={() => navigate('/login')}>
+              <Button 
+                onClick={() => navigate('/login')}
+                className="bg-[#1a472a] hover:bg-[#0d2415] text-white"
+              >
                 Sign In
               </Button>
             )}
@@ -65,61 +72,86 @@ export default function Landing() {
       {/* Main Content */}
       <main className="flex-grow pt-16">
         {/* Hero Section */}
-        <div className="relative h-[600px]">
+        <div className="relative h-[700px]">
           <div className="absolute inset-0">
             <img
               className="h-full w-full object-cover"
-              src="https://images.unsplash.com/photo-1578168593902-ebc6b4c3efd4?ixlib=rb-1.2.1&auto=format&fit=crop&w=2000&q=80"
-              alt="McAfee Knob on the Appalachian Trail"
+              src="https://images.unsplash.com/photo-1596894295161-22230b6aad7b?q=80&w=2074&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+              alt="Rhododendron field on top of the Blue Ridge Mountains"
             />
-            <div className="absolute inset-0 bg-gradient-to-b from-black/60 to-black/40" />
+
+            <div className="absolute inset-0 bg-gradient-to-b from-black/70 to-black/50" />
           </div>
           <div className="relative h-full flex items-center">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-              <h2 className="text-4xl font-bold tracking-tight text-white sm:text-6xl mb-4">
-                Ambassador Program Portal
-              </h2>
-              <p className="mt-6 max-w-lg mx-auto text-xl text-white/90 sm:max-w-3xl">
-                Access upcoming events, track community impact, and collaborate with fellow ambassadors.
-              </p>
-              {!user && (
-                <div className="mt-10">
-                  <Button 
-                    size="lg"
-                    onClick={() => navigate('/login')}
-                    className="bg-white text-black hover:bg-gray-100"
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8 }}
+              >
+                <h2 className="text-5xl font-extrabold tracking-tight text-white sm:text-7xl mb-4 leading-tight">
+                  Empowering <span className="text-[#ffd700]">Community</span><br />
+                  in the Roanoke Region
+                </h2>
+                <p className="mt-6 max-w-lg mx-auto text-xl text-white/90 sm:max-w-3xl font-medium">
+                  Create and plan upcoming events, collaborate with fellow ambassadors, and track community impact.
+                </p>
+                {!user && (
+                  <motion.div 
+                    className="mt-10"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.5 }}
                   >
-                    Sign In to Access Portal
-                  </Button>
-                </div>
-              )}
+                    <Button 
+                      size="lg"
+                      onClick={() => navigate('/login')}
+                      className="bg-[#ffd700] text-[#1a472a] hover:bg-[#e6c200] font-bold text-lg px-8 py-6"
+                    >
+                      Join Our Community
+                    </Button>
+                  </motion.div>
+                )}
+              </motion.div>
             </div>
           </div>
         </div>
 
         {/* Features Section */}
-        <section className="py-20 bg-gradient-to-b from-blue-50 to-white">
+        <section className="py-20 bg-gradient-to-b from-[#1a472a]/10 to-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-16">
-              <h3 className="text-3xl font-bold text-gray-900">
+              <motion.h3 
+                className="text-4xl font-bold text-[#1a472a]"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+              >
                 Empowering Our Community
-              </h3>
+              </motion.h3>
               <p className="mt-4 text-lg text-gray-600">
                 Join fellow ambassadors in shaping the future of the Roanoke Region
               </p>
             </div>
             <div className="grid md:grid-cols-3 gap-8">
               {features.map((feature, index) => (
-                <div key={index} className="relative group">
-                  <div className="absolute -inset-1 rounded-lg bg-gradient-to-r from-blue-600 to-blue-400 opacity-25 group-hover:opacity-50 transition duration-200" />
+                <motion.div 
+                  key={index}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.2 }}
+                  className="relative group"
+                >
+                  <div className="absolute -inset-1 rounded-lg bg-gradient-to-r from-[#1a472a] to-[#00274c] opacity-25 group-hover:opacity-50 transition duration-200" />
                   <div className="relative p-6 bg-white rounded-lg">
-                    <div className="w-12 h-12 rounded-lg bg-blue-600 flex items-center justify-center mb-4">
+                    <div className="w-12 h-12 rounded-lg bg-[#1a472a] flex items-center justify-center mb-4">
                       {feature.icon}
                     </div>
-                    <h4 className="text-xl font-semibold mb-2">{feature.title}</h4>
+                    <h4 className="text-xl font-bold mb-2">{feature.title}</h4>
                     <p className="text-gray-600">{feature.description}</p>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
           </div>
@@ -128,69 +160,78 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           {/* Quick Access Cards */}
           <section className="grid md:grid-cols-3 gap-6 mb-12">
-            <Card className="p-6 hover:shadow-lg transition-shadow">
-              <div className="flex items-center space-x-3 mb-3">
-                <CalendarDays className="h-6 w-6 text-blue-600" />
-                <h3 className="text-xl font-semibold">Events Dashboard</h3>
-              </div>
-              <p className="text-gray-600 mb-4">
-                View and manage upcoming events, track attendance, and measure impact.
-              </p>
-              <Button 
-                variant="outline" 
-                onClick={() => navigate('/dashboard/events')}
-                className="w-full"
+            {[
+              {
+                icon: <CalendarDays className="h-6 w-6 text-[#1a472a]" />,
+                title: "Events Dashboard",
+                description: "View and manage upcoming events, track attendance, and measure impact.",
+                path: '/dashboard/events'
+              },
+              {
+                icon: <Users className="h-6 w-6 text-[#1a472a]" />,
+                title: "Program Calendar",
+                description: "Access the full calendar of ambassador events and activities.",
+                path: '/dashboard/calendar'
+              },
+              {
+                icon: <BarChart3 className="h-6 w-6 text-[#1a472a]" />,
+                title: "Impact Reports",
+                description: "Track the collective impact of our ambassador program initiatives.",
+                path: '/dashboard/reports'
+              }
+            ].map((item, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
               >
-                View Events
-              </Button>
-            </Card>
-
-            <Card className="p-6 hover:shadow-lg transition-shadow">
-              <div className="flex items-center space-x-3 mb-3">
-                <Users className="h-6 w-6 text-blue-600" />
-                <h3 className="text-xl font-semibold">Program Calendar</h3>
-              </div>
-              <p className="text-gray-600 mb-4">
-                Access the full calendar of ambassador events and activities.
-              </p>
-              <Button 
-                variant="outline" 
-                onClick={() => navigate('/dashboard/calendar')}
-                className="w-full"
-              >
-                View Calendar
-              </Button>
-            </Card>
-
-            <Card className="p-6 hover:shadow-lg transition-shadow">
-              <div className="flex items-center space-x-3 mb-3">
-                <BarChart3 className="h-6 w-6 text-blue-600" />
-                <h3 className="text-xl font-semibold">Impact Reports</h3>
-              </div>
-              <p className="text-gray-600 mb-4">
-                Track the collective impact of our ambassador program initiatives.
-              </p>
-              <Button 
-                variant="outline" 
-                onClick={() => navigate('/dashboard/reports')}
-                className="w-full"
-              >
-                View Reports
-              </Button>
-            </Card>
+                <Card className="p-6 hover:shadow-lg transition-all duration-300 hover:scale-[1.02] border-2 border-[#1a472a]/10">
+                  <div className="flex items-center space-x-3 mb-3">
+                    {item.icon}
+                    <h3 className="text-xl font-bold text-[#1a472a]">{item.title}</h3>
+                  </div>
+                  <p className="text-gray-600 mb-4">
+                    {item.description}
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => navigate(item.path)}
+                    className="w-full border-[#1a472a] text-[#1a472a] hover:bg-[#1a472a] hover:text-white"
+                  >
+                    View {item.title.split(' ')[0]}
+                  </Button>
+                </Card>
+              </motion.div>
+            ))}
           </section>
 
           {/* Stats Section */}
-          <section className="relative">
-            <div className="absolute -inset-4 rounded-xl bg-gradient-to-r from-blue-100 via-blue-50 to-white" />
+          <section className="relative py-16">
+            <div className="absolute -inset-4 rounded-xl bg-gradient-to-r from-[#1a472a]/10 via-[#ffd700]/10 to-white" />
             <div className="relative rounded-lg p-8 mb-12">
-              <h3 className="text-2xl font-semibold text-center mb-8">Program Impact</h3>
+              <motion.h3 
+                className="text-3xl font-bold text-center mb-12 text-[#1a472a]"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+              >
+                Our Growing Impact
+              </motion.h3>
               <div className="grid md:grid-cols-4 gap-6 text-center">
                 {stats.map((stat, index) => (
-                  <div key={index} className="p-6 bg-white rounded-lg shadow-sm">
-                    <div className="text-3xl font-bold text-blue-600 mb-2">{stat.value}</div>
-                    <div className="text-gray-600">{stat.label}</div>
-                  </div>
+                  <motion.div 
+                    key={index}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: index * 0.1 }}
+                    className="p-6 bg-white rounded-lg shadow-sm border-2 border-[#1a472a]/10 hover:border-[#1a472a]/30 transition-all duration-300"
+                  >
+                    <div className="text-4xl font-extrabold text-[#1a472a] mb-2">{stat.value}</div>
+                    <div className="text-gray-600 font-medium">{stat.label}</div>
+                  </motion.div>
                 ))}
               </div>
             </div>
@@ -199,11 +240,11 @@ export default function Landing() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <footer className="border-t bg-[#1a472a]/5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="grid md:grid-cols-3 gap-8">
             <div>
-              <h4 className="font-semibold mb-4">Contact</h4>
+              <h4 className="font-bold text-[#1a472a] mb-4">Contact</h4>
               <p className="text-sm text-gray-600">
                 Roanoke Regional Partnership<br />
                 111 Franklin Plaza, Suite 333<br />
@@ -211,29 +252,29 @@ export default function Landing() {
               </p>
             </div>
             <div>
-              <h4 className="font-semibold mb-4">Quick Links</h4>
+              <h4 className="font-bold text-[#1a472a] mb-4">Quick Links</h4>
               <ul className="space-y-2 text-sm text-gray-600">
                 <li>
-                  <a href="https://roanoke.org" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600">
-                    Roanoke.org
+                  <a href="https://get2knownoke.com/" target="_blank" rel="noopener noreferrer" className="hover:text-[#1a472a] transition-colors">
+                    Get2KnowNoke
                   </a>
                 </li>
                 <li>
-                  <a href="/dashboard/events" className="hover:text-blue-600">Events Calendar</a>
+                  <a href="/dashboard/events" className="hover:text-[#1a472a] transition-colors">Events Calendar</a>
                 </li>
                 <li>
-                  <a href="/dashboard/reports" className="hover:text-blue-600">Impact Reports</a>
+                  <a href="/dashboard/reports" className="hover:text-[#1a472a] transition-colors">Impact Reports</a>
                 </li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-4">Legal</h4>
+              <h4 className="font-bold text-[#1a472a] mb-4">Legal</h4>
               <ul className="space-y-2 text-sm text-gray-600">
                 <li>
-                  <a href="/privacy" className="hover:text-blue-600">Privacy Policy</a>
+                  <a href="https://get2knownoke.com/privacy-policy/" className="hover:text-[#1a472a] transition-colors">Privacy Policy</a>
                 </li>
                 <li>
-                  <a href="/terms" className="hover:text-blue-600">Terms of Service</a>
+                  <a href="https://get2knownoke.com/privacy-policy/" className="hover:text-[#1a472a] transition-colors">Terms of Service</a>
                 </li>
               </ul>
             </div>

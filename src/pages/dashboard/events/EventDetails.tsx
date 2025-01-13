@@ -65,6 +65,17 @@ const AVAILABLE_METRICS = [
   }
 ];
 
+const statusColors = {
+  draft: 'bg-gray-100 text-gray-800',
+  idea: 'bg-gray-100 text-gray-800',
+  planning: 'bg-blue-100 text-blue-800',
+  scheduled: 'bg-yellow-100 text-yellow-800',
+  in_progress: 'bg-blue-100 text-blue-800',
+  completed: 'bg-green-100 text-green-800',
+  cancelled: 'bg-red-100 text-red-800',
+  archived: 'bg-gray-100 text-gray-800'
+};
+
 interface EventDetailsProps {
   event: Event;
   onEventUpdated?: () => void;
@@ -382,42 +393,50 @@ export function EventDetails({ event, onEventUpdated }: EventDetailsProps) {
             <h1 className="text-2xl font-bold">{event.title}</h1>
             <p className="text-sm text-gray-500 mt-2">{event.description}</p>
           </div>
-          {canEdit && (
-            <div className="flex items-center gap-2">
-              <Button
-                onClick={() => setEditDialogOpen(true)}
-                className="bg-black text-white hover:bg-gray-800"
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                Edit Event
-              </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setEditDialogOpen(true)}>
-                    <Edit className="mr-2 h-4 w-4" />
-                    Edit Details
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleArchiveEvent}>
-                    <Archive className="mr-2 h-4 w-4" />
-                    Archive Event
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleDeleteEvent} className="text-red-600">
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Delete Event
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+          <div className="flex items-center gap-2">
+            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg ${statusColors[event.status]}`}>
+              <div className={`w-2 h-2 rounded-full bg-current`} />
+              <span className="font-medium capitalize text-sm">
+                {event.status.replace('_', ' ')}
+              </span>
             </div>
-          )}
+            {canEdit && (
+              <>
+                <Button
+                  onClick={() => setEditDialogOpen(true)}
+                  className="bg-black text-white hover:bg-gray-800 hidden md:flex"
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Event
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="icon" className="h-9 w-9">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setEditDialogOpen(true)} className="md:hidden">
+                      <Edit className="mr-2 h-4 w-4" />
+                      Edit Event
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleArchiveEvent}>
+                      <Archive className="mr-2 h-4 w-4" />
+                      Archive Event
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator className="md:hidden" />
+                    <DropdownMenuItem onClick={handleDeleteEvent} className="text-red-600">
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete Event
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            )}
+          </div>
         </div>
 
-        <div className="flex items-center gap-4 text-sm text-gray-500">
+        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
           <div className="flex items-center">
             <CalendarDays className="w-4 h-4 mr-1" />
             {format(formatDate(event.date), 'PPP')}
@@ -439,7 +458,6 @@ export function EventDetails({ event, onEventUpdated }: EventDetailsProps) {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <Badge variant="outline">{event.status}</Badge>
           {event.tags.map((tag) => (
             <Badge key={tag} variant="secondary">
               {tag}
@@ -449,12 +467,16 @@ export function EventDetails({ event, onEventUpdated }: EventDetailsProps) {
       </div>
 
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="tasks">Tasks</TabsTrigger>
-          <TabsTrigger value="coordination">Event Day</TabsTrigger>
-          <TabsTrigger value="budget">Budget</TabsTrigger>
-          <TabsTrigger value="reports">Reports</TabsTrigger>
+        <TabsList className="flex flex-wrap gap-1 h-auto justify-start">
+          <div className="flex flex-wrap gap-1">
+            <TabsTrigger value="overview" className="text-sm">Overview</TabsTrigger>
+            <TabsTrigger value="tasks" className="text-sm">Tasks</TabsTrigger>
+            <TabsTrigger value="coordination" className="text-sm">Event Day</TabsTrigger>
+          </div>
+          <div className="flex flex-wrap gap-1">
+            <TabsTrigger value="budget" className="text-sm">Budget</TabsTrigger>
+            <TabsTrigger value="reports" className="text-sm">Reports</TabsTrigger>
+          </div>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
@@ -475,21 +497,11 @@ export function EventDetails({ event, onEventUpdated }: EventDetailsProps) {
                 <h3 className="font-medium">Location</h3>
                 <p className="text-sm text-muted-foreground">{event.location}</p>
               </div>
-              <div>
-                <h3 className="font-medium">Tags</h3>
-                <div className="flex flex-wrap gap-2 mt-1">
-                  {event.tags.map((tag) => (
-                    <Badge key={tag} variant="secondary">
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+            <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0">
               <div>
                 <CardTitle>Collaborators</CardTitle>
                 <p className="text-sm text-muted-foreground mt-1">
@@ -499,10 +511,10 @@ export function EventDetails({ event, onEventUpdated }: EventDetailsProps) {
               {canEdit && (
                 <Button
                   onClick={() => setCollaboratorDialogOpen(true)}
-                  className="bg-black text-white hover:bg-gray-800"
+                  className="bg-black text-white hover:bg-gray-800 w-full sm:w-auto"
                 >
                   <Users className="h-4 w-4 mr-2" />
-                  Manage Collaborators
+                  <span className="whitespace-nowrap">Manage Collaborators</span>
                 </Button>
               )}
             </CardHeader>
@@ -588,49 +600,73 @@ export function EventDetails({ event, onEventUpdated }: EventDetailsProps) {
         </TabsContent>
 
         <TabsContent value="coordination" className="pt-4">
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <Input 
-                placeholder="Add new checklist item..."
-                value={newChecklistItem}
-                onChange={(e) => setNewChecklistItem(e.target.value)}
-                className="flex-1"
-              />
-              <Button onClick={handleAddChecklistItem}>Add Item</Button>
-            </div>
-            
-            <ScrollArea className="h-[400px] rounded-md border p-4">
-              {event.checklist?.map((item) => (
-                <div key={item.id} className="flex items-center space-x-2 py-2">
-                  <Checkbox
-                    checked={item.completed}
-                    onCheckedChange={(checked) => {
-                      const updatedChecklist = event.checklist?.map(i =>
-                        i.id === item.id ? { ...i, completed: checked === true } : i
-                      );
-                      updateEvent(event.id, { checklist: updatedChecklist });
-                    }}
-                  />
-                  <span className="flex-1">{item.text}</span>
-                  <Select
-                    value={item.assignedTo || ""}
-                    onValueChange={(value) => handleAssignChecklistItem(item.id, value)}
-                  >
-                    <SelectTrigger className="w-[200px]">
-                      <SelectValue placeholder="Assign to..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {userProfiles.map((profile) => (
-                        <SelectItem key={profile.uid} value={profile.uid}>
-                          {profile.displayName || profile.email}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              ))}
-            </ScrollArea>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ClipboardList className="h-5 w-5" />
+                Event Day Checklist
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center space-x-2">
+                <Input 
+                  placeholder="Add new checklist item..."
+                  value={newChecklistItem}
+                  onChange={(e) => setNewChecklistItem(e.target.value)}
+                  className="flex-1"
+                />
+                <Button onClick={handleAddChecklistItem}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Item
+                </Button>
+              </div>
+              
+              <div className="space-y-2">
+                {event.checklist?.map((item) => (
+                  <Card key={item.id} className="p-3">
+                    <div className="flex items-center space-x-3">
+                      <Checkbox
+                        checked={item.completed}
+                        onCheckedChange={(checked) => {
+                          const updatedChecklist = event.checklist?.map(i =>
+                            i.id === item.id ? { ...i, completed: checked === true } : i
+                          );
+                          updateEvent(event.id, { checklist: updatedChecklist });
+                        }}
+                      />
+                      <span className={`flex-1 ${item.completed ? 'line-through text-gray-500' : ''}`}>
+                        {item.text}
+                      </span>
+                      <Select
+                        value={item.assignedTo || ""}
+                        onValueChange={(value) => handleAssignChecklistItem(item.id, value)}
+                      >
+                        <SelectTrigger className="w-[200px]">
+                          <SelectValue placeholder="Assign to..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {userProfiles.map((profile) => (
+                            <SelectItem key={profile.uid} value={profile.uid}>
+                              <div className="flex items-center">
+                                <User className="h-4 w-4 mr-2" />
+                                {profile.displayName || profile.email}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </Card>
+                ))}
+                {(!event.checklist || event.checklist.length === 0) && (
+                  <div className="text-center py-8">
+                    <ClipboardList className="h-12 w-12 mx-auto text-gray-400 mb-2" />
+                    <p className="text-gray-500">No checklist items yet</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="budget" className="space-y-4 pt-4">

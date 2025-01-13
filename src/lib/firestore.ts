@@ -280,7 +280,7 @@ export const getEventById = async (eventId: string): Promise<Event | null> => {
 export const getEventsByUser = async (userId: string): Promise<Event[]> => {
   const eventsQuery = query(
     collection(db, 'events'),
-    where('collaborators', 'array-contains', userId)
+    orderBy('createdAt', 'desc')
   );
   const querySnapshot = await getDocs(eventsQuery);
   return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Event));

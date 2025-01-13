@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
-import { LayoutDashboard, Calendar, PieChart, Settings, LogOut, ChevronLeft, ChevronRight, Bell } from 'lucide-react';
+import { LayoutDashboard, Calendar, PieChart, Settings, LogOut, ChevronLeft, ChevronRight, Bell, ClipboardList } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { getUserProfile, type UserProfile } from '../lib/firestore';
 import { useEffect, useState } from 'react';
@@ -15,10 +15,18 @@ import {
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'Events', href: '/dashboard/events', icon: Calendar },
+  { name: 'Events', href: '/dashboard/events', icon: ClipboardList },
   { name: 'Calendar', href: '/dashboard/calendar', icon: Calendar },
   { name: 'Reports', href: '/dashboard/reports', icon: PieChart },
   { name: 'Notifications', href: '/dashboard/notifications', icon: Bell },
+  { name: 'Settings', href: '/dashboard/settings', icon: Settings },
+];
+
+// Mobile navigation items (without Calendar)
+const mobileNavItems = [
+  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Events', href: '/dashboard/events', icon: ClipboardList },
+  { name: 'Reports', href: '/dashboard/reports', icon: PieChart },
   { name: 'Settings', href: '/dashboard/settings', icon: Settings },
 ];
 
@@ -179,9 +187,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // Mobile Bottom Navigation
   function MobileNav() {
     return (
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t md:hidden">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t md:hidden z-50">
         <div className="flex justify-around items-center h-16 px-4">
-          {navigation.map((item) => {
+          {mobileNavItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.href || 
               (item.href !== '/dashboard' && location.pathname.startsWith(item.href));
@@ -191,7 +199,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 key={item.name}
                 to={item.href}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-1 p-2 rounded-lg transition-all duration-200",
+                  "flex flex-col items-center justify-center gap-1",
                   isActive 
                     ? "text-black" 
                     : "text-gray-400 hover:text-gray-600"
@@ -257,18 +265,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className="min-h-screen bg-gray-50">
       <DesktopNav />
       <MobileHeader />
-      <MobileNav />
-
-      {/* Main Content */}
+      
       <main className={cn(
         "transition-all duration-300",
-        "px-4 py-8 md:p-8",
-        "md:ml-16",
-        isExpanded ? "md:ml-56" : "md:ml-16",
-        "mt-16 mb-16 md:mt-0 md:mb-0" // Account for mobile header and bottom nav
+        "pt-[4rem] pb-24 px-4 md:py-8 md:px-8", // Added bottom padding for mobile nav
+        isExpanded ? "md:ml-56" : "md:ml-16"
       )}>
         {children}
       </main>
+
+      <MobileNav />
     </div>
   );
 } 
