@@ -40,9 +40,9 @@ export default function EventsList() {
           setUserRole(profile.role);
         }
 
-        // Show all events for admins and program managers
-        const showAllEvents = profile?.role === 'admin' || profile?.role === 'program_manager';
-        const events = await getAllEvents(showAllEvents);
+        // For admins and program managers, get all events
+        // For ambassadors, get published events
+        const events = await getAllEvents(profile?.role === 'admin' || profile?.role === 'program_manager');
         setEvents(events);
         
         // Fetch creator profiles for all events
@@ -86,18 +86,14 @@ export default function EventsList() {
     if (selectedEventType !== 'all' && event.eventType !== selectedEventType) return false;
     if (selectedProgram !== 'none' && event.linkedProgramId !== selectedProgram) return false;
 
-    // Visibility rules
-    if (userRole === 'ambassador') {
-      // Regular ambassadors can see:
-      // 1. Published events
-      // 2. Their own events
-      // 3. Events they're collaborating on
-      return event.status === 'published' || 
-             event.createdBy === user?.uid || 
-             event.collaborators.includes(user?.uid);
+    // For ambassadors, show:
+    // 1. All published events (which are already filtered at the query level)
+    // 2. Their own events (any status)
+    // 3. Events they're collaborating on (any status)
+    if (userRole === 'ambassador' && event.status !== 'published') {
+      return event.createdBy === user?.uid || event.collaborators?.includes(user?.uid);
     }
 
-    // Admins and program managers can see all events
     return true;
   }));
 
