@@ -24,6 +24,7 @@ import { VolunteerFeedbackDialog } from './components/VolunteerFeedbackDialog';
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useNavigate } from 'react-router-dom';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const AVAILABLE_METRICS = [
   {
@@ -458,7 +459,7 @@ export function EventDetails({ event, onEventUpdated }: EventDetailsProps) {
 
         <TabsContent value="overview" className="space-y-4">
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
               <CardTitle>Event Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -473,6 +474,88 @@ export function EventDetails({ event, onEventUpdated }: EventDetailsProps) {
               <div>
                 <h3 className="font-medium">Location</h3>
                 <p className="text-sm text-muted-foreground">{event.location}</p>
+              </div>
+              <div>
+                <h3 className="font-medium">Tags</h3>
+                <div className="flex flex-wrap gap-2 mt-1">
+                  {event.tags.map((tag) => (
+                    <Badge key={tag} variant="secondary">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+              <div>
+                <CardTitle>Collaborators</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  People who can edit and manage this event
+                </p>
+              </div>
+              {canEdit && (
+                <Button
+                  onClick={() => setCollaboratorDialogOpen(true)}
+                  className="bg-black text-white hover:bg-gray-800"
+                >
+                  <Users className="h-4 w-4 mr-2" />
+                  Manage Collaborators
+                </Button>
+              )}
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {event.collaborators.length > 0 ? (
+                  <div className="grid gap-4">
+                    {event.collaborators.map(userId => (
+                      <div key={userId} className="flex items-center justify-between py-2">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-8 w-8">
+                            <AvatarFallback>
+                              {getCollaboratorName(userId).charAt(0)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="text-sm font-medium">{getCollaboratorName(userId)}</p>
+                            <p className="text-xs text-muted-foreground">Collaborator</p>
+                          </div>
+                        </div>
+                        {canEdit && userId !== user?.uid && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEventUpdate({ 
+                              collaborators: event.collaborators.filter(id => id !== userId) 
+                            })}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6">
+                    <Users className="h-8 w-8 mx-auto text-gray-400" />
+                    <p className="mt-2 text-sm font-medium text-gray-900">No collaborators</p>
+                    <p className="mt-1 text-sm text-gray-500">
+                      Add collaborators to work together on this event
+                    </p>
+                    {canEdit && (
+                      <Button
+                        onClick={() => setCollaboratorDialogOpen(true)}
+                        variant="outline"
+                        className="mt-4"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Collaborators
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -491,43 +574,6 @@ export function EventDetails({ event, onEventUpdated }: EventDetailsProps) {
                   className="min-h-[100px]"
                   disabled={!canEdit}
                 />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle>Collaborators</CardTitle>
-              {canEdit && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCollaboratorDialogOpen(true)}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Collaborator
-                </Button>
-              )}
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {event.collaborators.map(userId => (
-                  <div key={userId} className="flex items-center justify-between">
-                    <span className="text-sm">{getCollaboratorName(userId)}</span>
-                    {canEdit && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEventUpdate({ collaborators: event.collaborators.filter(id => id !== userId) })}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                ))}
-                {event.collaborators.length === 0 && (
-                  <p className="text-sm text-muted-foreground">No collaborators added</p>
-                )}
               </div>
             </CardContent>
           </Card>

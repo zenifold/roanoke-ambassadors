@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
-import { getEventsByUser, getTasksByUser, type Event, type Task } from '../../lib/firestore';
+import { useAuth } from '@/contexts/AuthContext';
+import { getEventsByUser, getTasksByUser, getNotificationsByUser, markNotificationAsRead, type Event, type Task, type Notification } from '@/lib/firestore';
+import { NotificationsWidget } from '@/components/NotificationsWidget';
 
 export default function Overview() {
   const { user } = useAuth();
@@ -9,19 +10,22 @@ export default function Overview() {
   const [error, setError] = useState('');
   const [events, setEvents] = useState<Event[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
   useEffect(() => {
     async function loadData() {
       if (!user) return;
 
       try {
-        const [userEvents, userTasks] = await Promise.all([
+        const [userEvents, userTasks, userNotifications] = await Promise.all([
           getEventsByUser(user.uid),
-          getTasksByUser(user.uid)
+          getTasksByUser(user.uid),
+          getNotificationsByUser(user.uid)
         ]);
 
         setEvents(userEvents);
         setTasks(userTasks);
+        setNotifications(userNotifications);
       } catch (error) {
         console.error('Error loading overview data:', error);
         setError('Failed to load overview data');
@@ -32,6 +36,17 @@ export default function Overview() {
 
     loadData();
   }, [user]);
+
+  const handleNotificationClick = async (notification: Notification) => {
+    try {
+      await markNotificationAsRead(notification.id);
+      setNotifications(prev => 
+        prev.map(n => n.id === notification.id ? { ...n, read: true } : n)
+      );
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
 
   if (loading) {
     return (
@@ -51,7 +66,7 @@ export default function Overview() {
         </div>
       )}
 
-      <div className="mt-6 grid gap-6 sm:grid-cols-2">
+      <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {/* Events Section */}
         <div className="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl p-6">
           <div className="flex items-center justify-between mb-4">
@@ -80,13 +95,14 @@ export default function Overview() {
                       </div>
                       <span
                         className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium
-                          ${event.status === 'draft' && 'bg-yellow-50 text-yellow-800 ring-1 ring-inset ring-yellow-600/20'}
-                          ${event.status === 'pending_review' && 'bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-700/10'}
-                          ${event.status === 'approved' && 'bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20'}
-                          ${event.status === 'rejected' && 'bg-red-50 text-red-700 ring-1 ring-inset ring-red-600/10'}
+                          ${event.status === 'idea' && 'bg-yellow-50 text-yellow-800 ring-1 ring-inset ring-yellow-600/20'}
+                          ${event.status === 'planning' && 'bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-700/10'}
+                          ${event.status === 'published' && 'bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20'}
+                          ${event.status === 'complete' && 'bg-purple-50 text-purple-700 ring-1 ring-inset ring-purple-600/20'}
+                          ${event.status === 'archived' && 'bg-gray-50 text-gray-700 ring-1 ring-inset ring-gray-600/20'}
                         `}
                       >
-                        {event.status.replace('_', ' ').charAt(0).toUpperCase() + event.status.slice(1).replace('_', ' ')}
+                        {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
                       </span>
                     </div>
                   </Link>
@@ -126,7 +142,8 @@ export default function Overview() {
                         className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium
                           ${task.status === 'todo' && 'bg-gray-100 text-gray-700'}
                           ${task.status === 'in_progress' && 'bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-700/10'}
-                          ${task.status === 'completed' && 'bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20'}
+                          ${task.status === 'waiting' && 'bg-yellow-50 text-yellow-700 ring-1 ring-inset ring-yellow-600/20'}
+                          ${task.status === 'complete' && 'bg-green-50 text-green-700 ring-1 ring-inset ring-green-600/20'}
                         `}
                       >
                         {task.status.replace('_', ' ').charAt(0).toUpperCase() + task.status.slice(1).replace('_', ' ')}
@@ -138,6 +155,12 @@ export default function Overview() {
             </ul>
           )}
         </div>
+
+        {/* Notifications Widget */}
+        <NotificationsWidget 
+          notifications={notifications} 
+          onNotificationClick={handleNotificationClick}
+        />
       </div>
     </div>
   );

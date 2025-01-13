@@ -11,15 +11,21 @@ service cloud.firestore {
     }
 
     function isProgramManager() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'program_manager';
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'program_manager';
     }
 
     function isEventCollaborator(eventId) {
-      return request.auth.uid in get(/databases/$(database)/documents/events/$(eventId)).data.collaborators;
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/events/$(eventId)) &&
+        request.auth.uid in get(/databases/$(database)/documents/events/$(eventId)).data.collaborators;
     }
 
     function isEventCreator(eventId) {
-      return request.auth.uid == get(/databases/$(database)/documents/events/$(eventId)).data.createdBy;
+      return isAuthenticated() && 
+        exists(/databases/$(database)/documents/events/$(eventId)) &&
+        get(/databases/$(database)/documents/events/$(eventId)).data.createdBy == request.auth.uid;
     }
 
     function isTaskAssignee(taskId) {
@@ -33,41 +39,48 @@ service cloud.firestore {
     // User profiles
     match /users/{userId} {
       allow read: if isAuthenticated();
-      allow create, update: if isUserProfile(userId);
-      allow delete: if false;
+      allow create, update: if isAuthenticated() && (request.auth.uid == userId || isProgramManager());
+      allow delete: if isProgramManager();
     }
 
     // Events
     match /events/{eventId} {
-      allow read: if isAuthenticated() && (
-        isEventCollaborator(eventId) || 
-        isProgramManager()
-      );
+      allow read: if isAuthenticated();
       allow create: if isAuthenticated();
-      allow update: if isAuthenticated() && (
-        isEventCreator(eventId) || 
-        isProgramManager()
-      );
-      allow delete: if isAuthenticated() && isProgramManager();
+      allow update: if isAuthenticated() && (isEventCreator(eventId) || isEventCollaborator(eventId) || isProgramManager());
+      allow delete: if isProgramManager();
+    }
+
+    // Notifications
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && request.auth.uid == resource.data.userId;
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && request.auth.uid == resource.data.userId;
+      allow delete: if isAuthenticated() && request.auth.uid == resource.data.userId;
     }
 
     // Tasks
     match /tasks/{taskId} {
-      allow read: if isAuthenticated() && (
-        isTaskAssignee(taskId) || 
-        isTaskCreator(taskId) || 
-        isProgramManager()
-      );
+      allow read: if isAuthenticated();
       allow create: if isAuthenticated();
-      allow update: if isAuthenticated() && (
-        isTaskAssignee(taskId) || 
-        isTaskCreator(taskId) || 
-        isProgramManager()
-      );
-      allow delete: if isAuthenticated() && (
-        isTaskCreator(taskId) || 
-        isProgramManager()
-      );
+      allow update: if isAuthenticated() && (resource.data.assignedTo == request.auth.uid || isProgramManager());
+      allow delete: if isProgramManager();
+    }
+
+    // Volunteer roles
+    match /volunteer_roles/{roleId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (resource.data.assignedTo == request.auth.uid || isProgramManager());
+      allow delete: if isProgramManager();
+    }
+
+    // Volunteer feedback
+    match /volunteer_feedback/{feedbackId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && resource.data.submittedBy == request.auth.uid;
+      allow delete: if isProgramManager();
     }
 
     // Budget Items

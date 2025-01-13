@@ -55,6 +55,9 @@ export default function Settings() {
     darkMode: false,
     updatedAt: new Date(),
   });
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersError, setUsersError] = useState('');
+  const [changingRole, setChangingRole] = useState<string | null>(null);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -108,6 +111,9 @@ export default function Settings() {
     const loadUsers = async () => {
       if (profile?.role !== 'program_manager') return;
 
+      setUsersLoading(true);
+      setUsersError('');
+
       try {
         // Update all avatars to the new style
         await updateAllUserAvatars();
@@ -116,6 +122,9 @@ export default function Settings() {
         setUsers(allUsers);
       } catch (error) {
         console.error('Error loading users:', error);
+        setUsersError('Failed to load users. Please try again.');
+      } finally {
+        setUsersLoading(false);
       }
     };
 
@@ -130,14 +139,18 @@ export default function Settings() {
     setError('');
 
     try {
+      if (!formData.firstName || !formData.lastName) {
+        throw new Error('First name and last name are required');
+      }
+
       await updateUserProfile(user.uid, formData);
       const updatedProfile = await getUserProfile(user.uid);
       setProfile(updatedProfile);
       toast.success('Profile updated successfully');
     } catch (error) {
       console.error('Error updating profile:', error);
-      setError('Failed to update profile');
-      toast.error('Failed to update profile');
+      setError(error instanceof Error ? error.message : 'Failed to update profile');
+      toast.error(error instanceof Error ? error.message : 'Failed to update profile');
     } finally {
       setSaving(false);
     }
@@ -168,14 +181,22 @@ export default function Settings() {
   };
 
   const handleRoleChange = async (userId: string, newRole: UserRole) => {
+    if (userId === user?.uid) {
+      toast.error("You cannot change your own role");
+      return;
+    }
+
+    setChangingRole(userId);
     try {
       await setUserRole(userId, newRole);
       const updatedUsers = await getUserProfiles();
       setUsers(updatedUsers);
-      toast.success('User role updated successfully');
+      toast.success(`User role updated to ${newRole.replace('_', ' ')}`);
     } catch (error) {
       console.error('Error updating user role:', error);
-      toast.error('Failed to update user role');
+      toast.error('Failed to update user role. Please try again.');
+    } finally {
+      setChangingRole(null);
     }
   };
 
@@ -244,6 +265,8 @@ export default function Settings() {
                     onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                     className="mt-1"
                     required
+                    disabled={saving}
+                    placeholder="Enter your first name"
                   />
                 </div>
                 <div>
@@ -254,6 +277,8 @@ export default function Settings() {
                     onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                     className="mt-1"
                     required
+                    disabled={saving}
+                    placeholder="Enter your last name"
                   />
                 </div>
               </div>
@@ -266,13 +291,21 @@ export default function Settings() {
                   onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                   className="mt-1"
                   rows={4}
-                  placeholder="Tell us about yourself"
+                  disabled={saving}
+                  placeholder="Tell us about yourself (optional)"
                 />
               </div>
 
               <div className="flex justify-end">
                 <Button type="submit" disabled={saving}>
-                  {saving ? 'Saving...' : 'Save Changes'}
+                  {saving ? (
+                    <>
+                      <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Changes'
+                  )}
                 </Button>
               </div>
             </form>
@@ -288,6 +321,7 @@ export default function Settings() {
                   <Label>Email Notifications</Label>
                   <p className="text-sm text-gray-500">
                     Receive email notifications about events and tasks
+                    <span className="block text-xs text-yellow-600">(Coming soon)</span>
                   </p>
                 </div>
                 <Switch
@@ -295,6 +329,7 @@ export default function Settings() {
                   onCheckedChange={(checked) => 
                     handlePreferenceChange('emailNotifications', checked)
                   }
+                  disabled
                 />
               </div>
               <div className="flex items-center justify-between">
@@ -302,6 +337,7 @@ export default function Settings() {
                   <Label>Push Notifications</Label>
                   <p className="text-sm text-gray-500">
                     Receive push notifications on your device
+                    <span className="block text-xs text-yellow-600">(Coming soon)</span>
                   </p>
                 </div>
                 <Switch
@@ -309,6 +345,7 @@ export default function Settings() {
                   onCheckedChange={(checked) => 
                     handlePreferenceChange('pushNotifications', checked)
                   }
+                  disabled
                 />
               </div>
               <div className="flex items-center justify-between">
@@ -332,56 +369,91 @@ export default function Settings() {
         {profile?.role === 'program_manager' && (
           <TabsContent value="admin">
             <Card className="p-6">
-              <h2 className="text-lg font-semibold mb-6">User Management</h2>
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>User</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Role</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {users.map((user) => (
-                      <TableRow key={user.uid}>
-                        <TableCell className="font-medium">
-                          <div className="flex items-center gap-2">
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage src={user.avatarUrl} alt={user.displayName || 'User'} />
-                              <AvatarFallback>
-                                {user.firstName?.[0]}{user.lastName?.[0]}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span>{user.displayName || user.email}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>{user.email}</TableCell>
-                        <TableCell>
-                          <Select
-                            value={user.role}
-                            onValueChange={(value: UserRole) => handleRoleChange(user.uid, value)}
-                          >
-                            <SelectTrigger className="w-32">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="ambassador">Ambassador</SelectItem>
-                              <SelectItem value="program_manager">Program Manager</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-                        <TableCell>
-                          <Button variant="outline" size="sm">
-                            View Details
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-lg font-semibold">User Management</h2>
+                <p className="text-sm text-muted-foreground">
+                  {users.length} user{users.length !== 1 ? 's' : ''}
+                </p>
               </div>
+              
+              {usersError && (
+                <div className="mb-4 rounded-md bg-red-50 p-4">
+                  <div className="text-sm text-red-700">{usersError}</div>
+                </div>
+              )}
+
+              {usersLoading ? (
+                <div className="space-y-4">
+                  <div className="h-8 bg-gray-100 rounded animate-pulse" />
+                  <div className="h-12 bg-gray-100 rounded animate-pulse" />
+                  <div className="h-12 bg-gray-100 rounded animate-pulse" />
+                  <div className="h-12 bg-gray-100 rounded animate-pulse" />
+                </div>
+              ) : (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>User</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Role</TableHead>
+                        <TableHead>Last Updated</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {users.map((user) => (
+                        <TableRow key={user.uid}>
+                          <TableCell className="font-medium">
+                            <div className="flex items-center gap-2">
+                              <Avatar className="h-8 w-8">
+                                <AvatarImage src={user.avatarUrl} alt={user.displayName || 'User'} />
+                                <AvatarFallback>
+                                  {user.firstName?.[0]}{user.lastName?.[0]}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex flex-col">
+                                <span>{user.displayName || 'Unnamed User'}</span>
+                                <span className="text-xs text-muted-foreground">{user.email}</span>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>{user.email}</TableCell>
+                          <TableCell>
+                            <Select
+                              value={user.role}
+                              onValueChange={(value: UserRole) => handleRoleChange(user.uid, value)}
+                              disabled={changingRole === user.uid || user.uid === profile?.uid}
+                            >
+                              <SelectTrigger className="w-[140px]">
+                                {changingRole === user.uid ? (
+                                  <div className="flex items-center gap-2">
+                                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                                    <span>Updating...</span>
+                                  </div>
+                                ) : (
+                                  <SelectValue />
+                                )}
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="ambassador">Ambassador</SelectItem>
+                                <SelectItem value="program_manager">Program Manager</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            {user.uid === profile?.uid && (
+                              <p className="text-xs text-muted-foreground mt-1">Cannot change own role</p>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {user.updatedAt instanceof Date 
+                              ? user.updatedAt.toLocaleDateString()
+                              : new Date(user.updatedAt.seconds * 1000).toLocaleDateString()}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
             </Card>
           </TabsContent>
         )}

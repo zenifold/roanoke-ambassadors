@@ -174,24 +174,20 @@ export default function EventsList() {
           ))}
         </div>
 
-        <div className="flex items-center gap-4 text-sm text-gray-500">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-500">
           <div className="flex items-center">
-            <CalendarDays className="w-4 h-4 mr-1" />
-            {formatDate(event.date)}
+            <CalendarDays className="w-4 h-4 mr-1.5 flex-shrink-0" />
+            <span>{formatDate(event.date)}</span>
           </div>
           {event.location && (
             <div className="flex items-center">
-              <MapPin className="w-4 h-4 mr-1" />
-              {event.location}
+              <MapPin className="w-4 h-4 mr-1.5 flex-shrink-0" />
+              <span className="truncate">{event.location}</span>
             </div>
           )}
           <div className="flex items-center">
-            <User className="w-4 h-4 mr-1" />
-            Created by you
-          </div>
-          <div className="flex items-center">
-            <Clock className="w-4 h-4 mr-1" />
-            {formatDate(event.createdAt)}
+            <User className="w-4 h-4 mr-1.5 flex-shrink-0" />
+            <span>Created by you</span>
           </div>
         </div>
       </div>

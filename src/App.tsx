@@ -14,6 +14,8 @@ import Settings from './pages/dashboard/settings';
 import Setup from './pages/admin/Setup';
 import Debug from './pages/admin/Debug';
 import { Reports } from './pages/dashboard/reports/Reports';
+import { Notifications } from './pages/dashboard/Notifications';
+import CalendarView from './pages/dashboard/events/Calendar';
 import { useState, useEffect } from 'react';
 import { getEventById, type Event } from '@/lib/firestore';
 
@@ -79,6 +81,14 @@ function App() {
             }
           />
           <Route
+            path="/dashboard/calendar"
+            element={
+              <ProtectedRoute>
+                <CalendarView />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/dashboard/tasks"
             element={
               <ProtectedRoute>
@@ -99,6 +109,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Reports />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/notifications"
+            element={
+              <ProtectedRoute>
+                <Notifications />
               </ProtectedRoute>
             }
           />

@@ -147,7 +147,7 @@ export default function CreateEvent() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="date" className="block text-sm font-medium text-gray-700">
-                    Date
+                    Date (Can be changed later)
                   </label>
                   <div className="mt-1">
                     <Input
@@ -163,7 +163,7 @@ export default function CreateEvent() {
 
                 <div>
                   <label htmlFor="time" className="block text-sm font-medium text-gray-700">
-                    Time
+                    Time (Can be changed later)
                   </label>
                   <div className="mt-1">
                     <Input

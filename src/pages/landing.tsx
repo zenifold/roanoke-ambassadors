@@ -38,15 +38,15 @@ export default function Landing() {
       {/* Header */}
       <header className="border-b bg-white/90 backdrop-blur-sm fixed w-full z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-3">
             <img 
-              src="/logo.png" 
-              alt="Roanoke Regional Partnership" 
-              className="h-10"
+              src="/G2KN Logo Cutout.webp" 
+              alt="G2KN" 
+              className="h-8 w-auto"
             />
-            <h1 className="text-xl font-semibold text-gray-900">
-              Ambassador Program Portal
-            </h1>
+            <span className="text-lg font-medium text-gray-900">
+              Ambassador Program
+            </span>
           </div>
           <div className="flex items-center space-x-4">
             {user ? (

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -8,9 +8,9 @@ import { updateEvent, type Event, EVENT_TAGS } from '@/lib/firestore';
 import { Timestamp } from 'firebase/firestore';
 import { Badge } from '@/components/ui/badge';
 import { X } from 'lucide-react';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/contexts/AuthContext';
 import { getEventsByUser } from '@/lib/firestore';
+import { toast } from 'sonner';
 
 interface EventEditDialogProps {
   open: boolean;
@@ -49,7 +49,7 @@ export function EventEditDialog({ open, onOpenChange, event, onEventUpdated }: E
     location: event.location || '',
     tags: event.tags || [],
     status: event.status as EventStatus,
-    eventType: event.eventType,
+    eventType: event.eventType || 'one_time',
     linkedProgramId: event.linkedProgramId
   });
 
@@ -73,6 +73,7 @@ export function EventEditDialog({ open, onOpenChange, event, onEventUpdated }: E
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     try {
       const dateTime = new Date(formData.date);
       if (formData.time) {
@@ -80,7 +81,7 @@ export function EventEditDialog({ open, onOpenChange, event, onEventUpdated }: E
         dateTime.setHours(parseInt(hours, 10), parseInt(minutes, 10));
       }
 
-      await updateEvent(event.id, {
+      const updateData = {
         title: formData.title,
         description: formData.description,
         date: dateTime,
@@ -88,14 +89,29 @@ export function EventEditDialog({ open, onOpenChange, event, onEventUpdated }: E
         tags: formData.tags,
         status: formData.status,
         eventType: formData.eventType,
-        linkedProgramId: formData.linkedProgramId
+        linkedProgramId: formData.linkedProgramId === 'none' ? null : formData.linkedProgramId
+      };
+
+      // Remove undefined/null values
+      Object.keys(updateData).forEach(key => {
+        if (updateData[key] === undefined || updateData[key] === null) {
+          delete updateData[key];
+        }
       });
 
-      onEventUpdated();
+      await updateEvent(event.id, updateData);
+      toast.success('Event updated successfully');
+      
+      // Close dialog first
       onOpenChange(false);
+      
+      // Then trigger parent update if callback exists
+      if (typeof onEventUpdated === 'function') {
+        onEventUpdated();
+      }
     } catch (error) {
       console.error('Error updating event:', error);
-      alert('Failed to update event');
+      toast.error('Failed to update event');
     }
   };
 
@@ -110,23 +126,27 @@ export function EventEditDialog({ open, onOpenChange, event, onEventUpdated }: E
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] p-0">
-        <DialogHeader className="p-6 pb-0">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
+        <DialogHeader>
           <DialogTitle>Update Event Information</DialogTitle>
         </DialogHeader>
         
-        <ScrollArea className="p-6 pt-2">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          <form 
+            id="event-edit-form" 
+            onSubmit={handleSubmit} 
+            className="space-y-6"
+          >
+            <div className="space-y-2">
               <label className="text-sm font-medium">Event Type</label>
               <Select
-                value={formData.eventType}
+                defaultValue={formData.eventType}
                 onValueChange={(value: 'one_time' | 'ongoing') => 
-                  setFormData({ ...formData, eventType: value })
+                  setFormData(prev => ({ ...prev, eventType: value }))
                 }
               >
-                <SelectTrigger>
-                  <SelectValue />
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select event type" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="one_time">One Time Event</SelectItem>
@@ -136,19 +156,19 @@ export function EventEditDialog({ open, onOpenChange, event, onEventUpdated }: E
             </div>
 
             {formData.eventType === 'one_time' && (
-              <div>
+              <div className="space-y-2">
                 <label className="text-sm font-medium">Link to Program (Optional)</label>
                 <Select
-                  value={formData.linkedProgramId || ''}
+                  defaultValue={formData.linkedProgramId || 'none'}
                   onValueChange={(value) => 
-                    setFormData({ ...formData, linkedProgramId: value || undefined })
+                    setFormData(prev => ({ ...prev, linkedProgramId: value === 'none' ? undefined : value }))
                   }
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select a program" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No Program</SelectItem>
+                    <SelectItem value="none">No Program</SelectItem>
                     {ongoingPrograms.map((program) => (
                       <SelectItem key={program.id} value={program.id}>
                         {program.title}
@@ -159,60 +179,61 @@ export function EventEditDialog({ open, onOpenChange, event, onEventUpdated }: E
               </div>
             )}
 
-            <div>
+            <div className="space-y-2">
               <label className="text-sm font-medium">Title</label>
               <Input
                 value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
                 placeholder="Event title"
               />
             </div>
 
-            <div>
+            <div className="space-y-2">
               <label className="text-sm font-medium">Description</label>
               <Textarea
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                 placeholder="Event description"
+                className="min-h-[100px]"
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
+              <div className="space-y-2">
                 <label className="text-sm font-medium">Date</label>
                 <Input
                   type="date"
                   value={formData.date}
-                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
                 />
               </div>
 
-              <div>
+              <div className="space-y-2">
                 <label className="text-sm font-medium">Time</label>
                 <Input
                   type="time"
                   value={formData.time}
-                  onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                  onChange={(e) => setFormData(prev => ({ ...prev, time: e.target.value }))}
                 />
               </div>
             </div>
 
-            <div>
+            <div className="space-y-2">
               <label className="text-sm font-medium">Location</label>
               <Input
                 value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
                 placeholder="Event location"
               />
             </div>
 
-            <div>
+            <div className="space-y-2">
               <label className="text-sm font-medium">Status</label>
               <Select
-                value={formData.status}
-                onValueChange={(value: EventStatus) => setFormData({ ...formData, status: value })}
+                defaultValue={formData.status}
+                onValueChange={(value: EventStatus) => setFormData(prev => ({ ...prev, status: value }))}
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -225,7 +246,7 @@ export function EventEditDialog({ open, onOpenChange, event, onEventUpdated }: E
               </Select>
             </div>
 
-            <div>
+            <div className="space-y-2">
               <label className="text-sm font-medium">Tags</label>
               <div className="flex flex-wrap gap-2 mt-2">
                 {EVENT_TAGS.map((tag) => (
@@ -246,17 +267,19 @@ export function EventEditDialog({ open, onOpenChange, event, onEventUpdated }: E
                 ))}
               </div>
             </div>
-
-            <div className="flex justify-end space-x-2 pt-4">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancel
-              </Button>
-              <Button type="submit">
-                Save Changes
-              </Button>
-            </div>
           </form>
-        </ScrollArea>
+        </div>
+
+        <DialogFooter className="mt-auto px-6 py-4 border-t">
+          <div className="flex gap-2 justify-end w-full">
+            <Button variant="outline" type="button" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" form="event-edit-form">
+              Save Changes
+            </Button>
+          </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

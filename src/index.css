@@ -36,3 +36,60 @@
   background-size: cover;
   background-position: center;
 }
+
+/* FullCalendar Styles */
+.fc {
+  --fc-border-color: theme('colors.gray.200');
+  --fc-button-bg-color: theme('colors.white');
+  --fc-button-border-color: theme('colors.gray.300');
+  --fc-button-text-color: theme('colors.gray.700');
+  --fc-button-hover-bg-color: theme('colors.gray.50');
+  --fc-button-hover-border-color: theme('colors.gray.400');
+  --fc-button-active-bg-color: theme('colors.gray.100');
+  --fc-button-active-border-color: theme('colors.gray.500');
+  --fc-event-bg-color: theme('colors.black');
+  --fc-event-border-color: theme('colors.black');
+  --fc-event-text-color: theme('colors.white');
+  --fc-today-bg-color: theme('colors.gray.50');
+}
+
+.fc .fc-button {
+  @apply font-medium text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black;
+}
+
+.fc .fc-button-primary:not(:disabled):active,
+.fc .fc-button-primary:not(:disabled).fc-button-active {
+  @apply bg-gray-100 border-gray-500 shadow-none;
+}
+
+.fc .fc-button-primary:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+.fc .fc-daygrid-day.fc-day-today {
+  @apply bg-gray-50;
+}
+
+.fc .fc-daygrid-day-number {
+  @apply text-sm text-gray-700;
+}
+
+.fc .fc-col-header-cell {
+  @apply py-2 font-medium text-gray-900;
+}
+
+.fc .fc-event {
+  @apply cursor-pointer transition-opacity hover:opacity-90;
+}
+
+.fc .fc-toolbar-title {
+  @apply text-xl font-semibold text-gray-900;
+}
+
+.fc .fc-toolbar.fc-header-toolbar {
+  @apply mb-4;
+}
+
+.fc .fc-view-harness {
+  @apply bg-white rounded-lg border border-gray-200;
+}

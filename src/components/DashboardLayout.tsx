@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { Button } from './ui/button';
-import { LayoutDashboard, Calendar, PieChart, Settings, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, Calendar, PieChart, Settings, LogOut, ChevronLeft, ChevronRight, Bell } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { getUserProfile, type UserProfile } from '../lib/firestore';
 import { useEffect, useState } from 'react';
@@ -18,6 +18,7 @@ const navigation = [
   { name: 'Events', href: '/dashboard/events', icon: Calendar },
   { name: 'Calendar', href: '/dashboard/calendar', icon: Calendar },
   { name: 'Reports', href: '/dashboard/reports', icon: PieChart },
+  { name: 'Notifications', href: '/dashboard/notifications', icon: Bell },
   { name: 'Settings', href: '/dashboard/settings', icon: Settings },
 ];
 
@@ -66,10 +67,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         )}
       >
         <div className="flex flex-col h-full">
+          {/* Logo Section */}
+          <div className="p-3 border-b">
+            <div className="flex items-center space-x-3">
+              <img
+                src="/G2KN Logo Cutout.webp"
+                alt="G2KN"
+                className="h-8 w-auto"
+              />
+              {isExpanded && (
+                <span className="text-lg font-medium text-gray-900 truncate">
+                  Ambassador App
+                </span>
+              )}
+            </div>
+          </div>
+
           {/* Toggle Button */}
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="absolute -right-3 top-8 bg-white rounded-full p-1 shadow-md hover:bg-gray-50"
+            className="absolute -right-3 top-24 bg-white rounded-full p-1 shadow-md hover:bg-gray-50"
           >
             {isExpanded ? (
               <ChevronLeft className="h-4 w-4" />
@@ -195,11 +212,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return (
       <div className="fixed top-0 left-0 right-0 bg-white border-b md:hidden">
         <div className="flex items-center justify-between px-4 h-16">
-          <img
-            className="h-8 w-auto"
-            src="/logo.svg"
-            alt="Roanoke Ambassadors"
-          />
+          <div className="flex items-center space-x-3">
+            <img
+              src="/G2KN Logo Cutout.webp"
+              alt="G2KN"
+              className="h-8 w-auto"
+            />
+            <span className="text-lg font-medium text-gray-900">
+              Ambassador Program
+            </span>
+          </div>
           {profile && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

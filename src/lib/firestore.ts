@@ -14,6 +14,8 @@ import {
   arrayRemove,
   Timestamp,
   limit,
+  orderBy,
+  serverTimestamp,
 } from 'firebase/firestore';
 
 export type UserRole = 'ambassador' | 'program_manager' | 'admin';
@@ -725,9 +727,25 @@ export const updateEvent = async (
   eventData: Partial<Omit<Event, 'id' | 'createdAt' | 'updatedAt'>>
 ): Promise<void> => {
   const eventRef = doc(db, 'events', eventId);
+  
+  // Create a clean update object
+  const updateData = { ...eventData };
+  
+  // Convert any Date objects to Timestamps
+  if (updateData.date instanceof Date) {
+    updateData.date = Timestamp.fromDate(updateData.date);
+  }
+  
+  // Handle null/undefined values
+  Object.keys(updateData).forEach(key => {
+    if (updateData[key] === undefined) {
+      delete updateData[key];
+    }
+  });
+
   await updateDoc(eventRef, {
-    ...eventData,
-    updatedAt: new Date(),
+    ...updateData,
+    updatedAt: Timestamp.fromDate(new Date()),
   });
 };
 
@@ -889,11 +907,39 @@ export const createEventReport = async (
   eventId: string,
   data: Omit<EventReport, 'id' | 'submittedAt' | 'updatedAt'>
 ): Promise<string> => {
-  const reportRef = await addDoc(collection(db, 'eventReports'), {
-    ...data,
-    submittedAt: new Date(),
-    updatedAt: new Date(),
+  // Convert any string values to appropriate types for metrics
+  const processedMetrics = data.metrics.map(metric => {
+    const definition = AVAILABLE_METRICS.find(def => def.id === metric.definitionId);
+    if (!definition) return metric;
+
+    let value = metric.value;
+    if (definition.type === 'number' || definition.type === 'currency') {
+      value = typeof value === 'string' ? parseFloat(value) : value;
+    }
+    return { ...metric, value };
   });
+
+  const now = Timestamp.fromDate(new Date());
+  const reportData = {
+    ...data,
+    metrics: processedMetrics,
+    submittedAt: now,
+    updatedAt: now,
+  };
+
+  // Create the report document
+  const reportRef = await addDoc(collection(db, 'eventReports'), reportData);
+
+  // Update the event document with the report reference
+  const eventRef = doc(db, 'events', eventId);
+  await updateDoc(eventRef, {
+    report: {
+      id: reportRef.id,
+      ...reportData,
+    },
+    updatedAt: now,
+  });
+
   return reportRef.id;
 };
 
@@ -919,9 +965,42 @@ export const updateEventReport = async (
   data: Partial<Omit<EventReport, 'id' | 'eventId' | 'submittedAt' | 'submittedBy'>>
 ): Promise<void> => {
   const reportRef = doc(db, 'eventReports', reportId);
-  await updateDoc(reportRef, {
-    ...data,
-    updatedAt: new Date(),
+  const reportSnap = await getDoc(reportRef);
+  if (!reportSnap.exists()) throw new Error('Report not found');
+
+  const reportData = reportSnap.data();
+  const eventId = reportData.eventId;
+
+  // Process metrics if they exist in the update
+  let processedData = { ...data };
+  if (data.metrics) {
+    processedData.metrics = data.metrics.map(metric => {
+      const definition = AVAILABLE_METRICS.find(def => def.id === metric.definitionId);
+      if (!definition) return metric;
+
+      let value = metric.value;
+      if (definition.type === 'number' || definition.type === 'currency') {
+        value = typeof value === 'string' ? parseFloat(value) : value;
+      }
+      return { ...metric, value };
+    });
+  }
+
+  const now = Timestamp.fromDate(new Date());
+  processedData.updatedAt = now;
+
+  // Update the report document
+  await updateDoc(reportRef, processedData);
+
+  // Update the event document with the updated report
+  const eventRef = doc(db, 'events', eventId);
+  await updateDoc(eventRef, {
+    report: {
+      id: reportId,
+      ...reportData,
+      ...processedData,
+    },
+    updatedAt: now,
   });
 };
 
@@ -936,7 +1015,7 @@ export const isAmbassador = async (userId: string): Promise<boolean> => {
   return userProfile?.role === 'ambassador';
 };
 
-export const canEditEvent = async (userId: string, eventId: string): Promise<boolean> => {
+export const canEditEvent = async (eventId: string, userId: string): Promise<boolean> => {
   const [userProfile, event] = await Promise.all([
     getUserProfile(userId),
     getEventById(eventId)
@@ -944,8 +1023,8 @@ export const canEditEvent = async (userId: string, eventId: string): Promise<boo
 
   if (!userProfile || !event) return false;
 
-  // Admins can edit any event
-  if (userProfile.role === 'admin') return true;
+  // Program managers can edit any event
+  if (userProfile.role === 'program_manager') return true;
 
   // Ambassadors can edit events they created or are collaborators on
   if (userProfile.role === 'ambassador') {
@@ -1011,7 +1090,7 @@ export const initializeAdminUser = async (email: string): Promise<void> => {
   const userDoc = querySnapshot.docs[0];
   
   if (userDoc) {
-    await updateUserRole(userDoc.id, 'admin');
+    await updateUserRole(userDoc.id, 'program_manager');
   } else {
     console.error('User not found:', email);
   }
@@ -1058,3 +1137,63 @@ export const deleteEvent = async (eventId: string): Promise<void> => {
   const eventRef = doc(db, 'events', eventId);
   await deleteDoc(eventRef);
 };
+
+export interface Notification {
+  id: string;
+  userId: string;
+  type: 'task' | 'checklist' | 'comment' | 'event' | 'role';
+  title: string;
+  description: string;
+  createdAt: Date;
+  read: boolean;
+  eventId: string;
+  tabId?: string;
+  metadata?: {
+    taskId?: string;
+    checklistItemId?: string;
+    commentId?: string;
+  };
+}
+
+// Get notifications for a user
+export async function getNotificationsByUser(userId: string): Promise<Notification[]> {
+  const notificationsRef = collection(db, 'notifications');
+  const q = query(
+    notificationsRef,
+    where('userId', '==', userId),
+    orderBy('createdAt', 'desc'),
+    limit(50)
+  );
+
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data(),
+    createdAt: doc.data().createdAt.toDate()
+  })) as Notification[];
+}
+
+// Mark a notification as read
+export async function markNotificationAsRead(notificationId: string): Promise<void> {
+  const notificationRef = doc(db, 'notifications', notificationId);
+  await updateDoc(notificationRef, {
+    read: true,
+    readAt: serverTimestamp()
+  });
+}
+
+// Create a notification
+export async function createNotification(notification: Omit<Notification, 'id' | 'createdAt'>): Promise<string> {
+  const notificationsRef = collection(db, 'notifications');
+  const docRef = await addDoc(notificationsRef, {
+    ...notification,
+    createdAt: serverTimestamp()
+  });
+  return docRef.id;
+}
+
+// Delete a notification
+export async function deleteNotification(notificationId: string): Promise<void> {
+  const notificationRef = doc(db, 'notifications', notificationId);
+  await deleteDoc(notificationRef);
+}

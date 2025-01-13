@@ -148,37 +148,163 @@ export function Reports() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card className="p-6">
               <h3 className="text-lg font-semibold mb-2">Total Events</h3>
               <p className="text-3xl font-bold">{events.length}</p>
             </Card>
 
             <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-2">Events with Reports</h3>
-              <p className="text-3xl font-bold">{reports.length}</p>
+              <h3 className="text-lg font-semibold mb-2">Total Attendees</h3>
+              <p className="text-3xl font-bold">
+                {aggregatedMetrics['attendees']?.total || 0}
+              </p>
             </Card>
 
             <Card className="p-6">
-              <h3 className="text-lg font-semibold mb-2">Report Completion Rate</h3>
+              <h3 className="text-lg font-semibold mb-2">Total Donations</h3>
               <p className="text-3xl font-bold">
-                {events.length > 0
-                  ? Math.round((reports.length / events.length) * 100)
-                  : 0}%
+                ${aggregatedMetrics['donationsTotal']?.total.toLocaleString() || 0}
+              </p>
+            </Card>
+
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold mb-2">Avg. Satisfaction</h3>
+              <p className="text-3xl font-bold">
+                {aggregatedMetrics['satisfaction']?.average.toFixed(1) || 0}★
               </p>
             </Card>
           </div>
 
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold mb-4">Attendee & Volunteer Metrics</h3>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={[
+                    {
+                      name: 'Attendees',
+                      value: aggregatedMetrics['attendees']?.average || 0,
+                      label: 'Avg. Attendees per Event'
+                    },
+                    {
+                      name: 'Volunteers',
+                      value: aggregatedMetrics['volunteers']?.average || 0,
+                      label: 'Avg. Volunteers per Event'
+                    },
+                    {
+                      name: 'Hours',
+                      value: aggregatedMetrics['hoursServed']?.average || 0,
+                      label: 'Avg. Hours Served per Event'
+                    }
+                  ]}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip 
+                      formatter={(value: number) => [value.toFixed(1), 'Average']}
+                      labelFormatter={(name: string) => {
+                        const item = [
+                          {name: 'Attendees', value: 0, label: 'Avg. Attendees per Event'},
+                          {name: 'Volunteers', value: 0, label: 'Avg. Volunteers per Event'},
+                          {name: 'Hours', value: 0, label: 'Avg. Hours Served per Event'}
+                        ].find(i => i.name === name);
+                        return item?.label || name;
+                      }}
+                    />
+                    <Bar dataKey="value" fill="#3b82f6" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </Card>
+
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold mb-4">Donation Metrics</h3>
+              <div className="h-[300px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={[
+                    {
+                      name: 'Donations',
+                      value: aggregatedMetrics['donationsTotal']?.average || 0,
+                      label: 'Avg. Donations per Event'
+                    },
+                    {
+                      name: 'Donors',
+                      value: aggregatedMetrics['donorsCount']?.average || 0,
+                      label: 'Avg. Donors per Event'
+                    },
+                    {
+                      name: 'Pledges',
+                      value: aggregatedMetrics['pledgesTotal']?.average || 0,
+                      label: 'Avg. Pledges per Event'
+                    }
+                  ]}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip 
+                      formatter={(value: number, name: string) => {
+                        if (name === 'Donors') return [value.toFixed(1), 'Average'];
+                        return [`$${value.toFixed(2)}`, 'Average'];
+                      }}
+                      labelFormatter={(name: string) => {
+                        const item = [
+                          {name: 'Donations', value: 0, label: 'Avg. Donations per Event'},
+                          {name: 'Donors', value: 0, label: 'Avg. Donors per Event'},
+                          {name: 'Pledges', value: 0, label: 'Avg. Pledges per Event'}
+                        ].find(i => i.name === name);
+                        return item?.label || name;
+                      }}
+                    />
+                    <Bar dataKey="value" fill="#3b82f6" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </Card>
+          </div>
+
           <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-4">Metric Distribution</h3>
-            <div className="h-[400px]">
+            <h3 className="text-lg font-semibold mb-4">Engagement Metrics</h3>
+            <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={metricSummaries}>
+                <BarChart data={[
+                  {
+                    name: 'Satisfaction',
+                    value: aggregatedMetrics['satisfaction']?.average || 0,
+                    label: 'Overall Satisfaction'
+                  },
+                  {
+                    name: 'Learning',
+                    value: aggregatedMetrics['learningObjectives']?.average || 0,
+                    label: 'Learning Objectives Met'
+                  },
+                  {
+                    name: 'Engagement',
+                    value: aggregatedMetrics['engagementLevel']?.average || 0,
+                    label: 'Participant Engagement'
+                  },
+                  {
+                    name: 'Connections',
+                    value: aggregatedMetrics['newConnections']?.average || 0,
+                    label: 'New Connections per Event'
+                  }
+                ]}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="label" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="totalEvents" fill="#3b82f6" name="Number of Events" />
+                  <XAxis dataKey="name" />
+                  <YAxis domain={[0, 5]} />
+                  <Tooltip 
+                    formatter={(value: number) => [value.toFixed(1), 'Average']}
+                    labelFormatter={(name: string) => {
+                      const item = [
+                        {name: 'Satisfaction', value: 0, label: 'Overall Satisfaction'},
+                        {name: 'Learning', value: 0, label: 'Learning Objectives Met'},
+                        {name: 'Engagement', value: 0, label: 'Participant Engagement'},
+                        {name: 'Connections', value: 0, label: 'New Connections per Event'}
+                      ].find(i => i.name === name);
+                      return item?.label || name;
+                    }}
+                  />
+                  <Bar dataKey="value" fill="#3b82f6" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
