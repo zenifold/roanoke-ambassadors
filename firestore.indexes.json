@@ -13,7 +13,7 @@
           "order": "DESCENDING"
         },
         {
-          "fieldPath": "__name__",
+          "fieldPath": "_name_",
           "order": "DESCENDING"
         }
       ]
@@ -28,10 +28,6 @@
         },
         {
           "fieldPath": "createdAt",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "__name__",
           "order": "DESCENDING"
         }
       ]
@@ -50,10 +46,6 @@
         },
         {
           "fieldPath": "dueDate",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "__name__",
           "order": "ASCENDING"
         }
       ]
@@ -83,20 +75,6 @@
         {
           "fieldPath": "date",
           "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "tasks",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "assignees",
-          "arrayConfig": "CONTAINS"
-        },
-        {
-          "fieldPath": "createdAt",
-          "order": "DESCENDING"
         }
       ]
     }
